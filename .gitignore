@@ -1,0 +1,21 @@
+# Entorno virtual
+.venv/
+venv/
+
+# Python
+__pycache__/
+*.pyc
+
+# Base de datos local
+db.sqlite3
+
+# Variables de entorno (secretos)
+.env
+
+# Editor y herramientas
+.vscode/
+.claude/
+.idea/
+
+# Archivos de usuario
+media/
