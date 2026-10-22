@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load fechas %}
+
+{% comment %}
+La bandeja: las notificaciones de quien mira.
+
+Las sin leer llevan una marca a la izquierda, además de la insignia. Así se
+ve de un vistazo cuántas quedan sin abrir sin tener que leer cada fila.
+{% endcomment %}
+
+{% block content %}
+<h1>Notificaciones</h1>
+<div class="acciones">
+  <a class="boton" href="{% url 'notificacion-create' %}">Nueva notificación</a>
+  {# La campana lleva aquí, así que esta es la puerta a los avisos del campus. #}
+  <a class="boton secundario" href="{% url 'aviso-list' %}">Avisos del campus</a>
+</div>
+
+{% if object_list %}
+<ul class="fichas">
+  {% for n in object_list %}
+    <li>
+      <a class="ficha {% if not n.leida %}ficha--nueva{% endif %}"
+         href="{{ n.get_absolute_url }}">
+        <span class="ficha__cabecera">
+          <span class="ficha__titulo">
+            {% include '_icono.html' with nombre='notificacion' %}{{ n.titulo }}
+          </span>
+          {% if n.leida %}
+            {% include '_insignia.html' with texto='Leída' tono='apagada' %}
+          {% else %}
+            {% include '_insignia.html' with texto='Sin leer' %}
+          {% endif %}
+        </span>
+        <p class="ficha__texto">{{ n.mensaje }}</p>
+        <p class="ficha__meta">{{ n.fecha|hace }}</p>
+      </a>
+    </li>
+  {% endfor %}
+</ul>
+{% else %}
+  {% include '_estado_vacio.html' with icono='notificacion' titulo='No tienes notificaciones' texto='Aquí llegan los avisos de tu campus y las respuestas a lo que reportas.' only %}
+{% endif %}
+{% endblock %}

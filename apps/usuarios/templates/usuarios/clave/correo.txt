@@ -1,0 +1,18 @@
+{% autoescape off %}Hola{% if user.nombre %}, {{ user.nombre }}{% endif %}:
+
+Alguien pidió recuperar la contraseña de esta cuenta en Campus Seguro.
+
+Si fuiste tú, abre este enlace y escribe una nueva:
+
+{{ protocol }}://{{ domain }}{% url 'clave-nueva' uidb64=uid token=token %}
+
+El enlace vale 30 minutos y deja de servir en cuanto lo uses.
+
+Si no fuiste tú, no tienes que hacer nada: tu contraseña sigue igual y nadie
+puede entrar con este mensaje si no abre el enlace.
+
+--
+Campus Seguro
+Información reportada por la comunidad. No detecta peligro ni garantiza
+seguridad física.
+{% endautoescape %}

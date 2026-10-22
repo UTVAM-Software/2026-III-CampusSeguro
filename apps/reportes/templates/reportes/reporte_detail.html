@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load fechas %}
+
+{% comment %}
+El detalle de un reporte.
+
+Lo primero es qué se reportó y si sigue siendo cierto; después la foto, y
+después lo demás. Antes era la lista de campos del modelo en el orden en que
+están escritos en models.py, que es el orden en que le convienen a la base de
+datos, no a quien lee.
+{% endcomment %}
+
+{% block volver %}<a class="atras" href="{% url 'reporte-list' %}">← Volver a reportes</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre=object.icono %}{{ object.get_tipo_display }}</h1>
+    {% include '_insignia.html' with texto=object.get_estado_display tono=object.tono_estado %}
+  </div>
+  <p class="cabecera__meta">
+    Registrado {{ object.fecha_creacion|hace }} por {{ object.usuario }} · {{ object.campus }}
+  </p>
+</header>
+
+<div class="tarjeta">
+  <p>{{ object.descripcion }}</p>
+
+  {% comment %}
+  La foto, si la hay. Es opcional a proposito: obligar a una dejaria fuera a
+  quien reporta de noche, de lejos o sin querer sacar el telefono.
+  {% endcomment %}
+  {% if object.foto %}
+    <img class="foto-reporte" src="{{ object.foto.url }}"
+         alt="Fotografía adjunta a este reporte">
+  {% endif %}
+</div>
+
+{# ============================ ¿Sigue presente? =========================== #}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">¿Sigue presente?</h2>
+
+  <div class="datos">
+    <div class="dato">
+      <p class="dato__valor">{{ confirman }}</p>
+      <p class="dato__etiqueta">dicen que sigue</p>
+    </div>
+    <div class="dato apagado">
+      <p class="dato__valor">{{ niegan }}</p>
+      <p class="dato__etiqueta">dicen que ya no</p>
+    </div>
+  </div>
+
+  {% comment %}
+  Aquí había un desplegable de "¿Quién eres?" con todas las personas del
+  campus, porque sin sesión no había forma de saber quién respondía. Ya la hay.
+  {% endcomment %}
+  {% if puede_responder %}
+    <form method="post" action="{% url 'reporte-confirmar' object.pk %}">
+      {% csrf_token %}
+      <div class="campo">
+        <label for="comentario">Comentario (opcional)</label>
+        <input type="text" name="comentario" id="comentario" maxlength="200">
+      </div>
+      <button type="submit" name="confirma" value="1" class="boton secundario bloque">✓ Sí, sigue</button>
+      <button type="submit" name="confirma" value="0" class="boton secundario bloque negar">✕ No, ya no está</button>
+      <p class="campo__ayuda">
+        Tu respuesta ayuda a saber si la situación sigue vigente.
+      </p>
+    </form>
+  {% else %}
+    <div class="aviso" role="status">
+      <span class="aviso__icono" aria-hidden="true">i</span>
+      <div>Este reporte es tuyo, así que no puedes responderlo.</div>
+    </div>
+  {% endif %}
+</div>
+
+{# ========================= Lo que ha dicho la gente ====================== #}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Respuestas</h2>
+
+  {% if object.confirmaciones.exists %}
+    <ul class="lista-llana">
+      {% for c in object.confirmaciones.all %}
+        <li>
+          <span>{{ c.usuario }}{% if c.comentario %} — «{{ c.comentario }}»{% endif %}</span>
+          {% include '_insignia.html' with texto=c.confirma|yesno:"Sigue,Ya no" tono=c.confirma|yesno:"exito,apagada" %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    {% include '_estado_vacio.html' with icono='condiciones_registradas' titulo='Nadie ha respondido todavía' texto='Cuando alguien del campus diga si esto sigue siendo cierto, su respuesta aparecerá aquí.' only %}
+  {% endif %}
+</div>
+
+{# =============================== Ubicación =============================== #}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Ubicación</h2>
+  <dl class="datos-lista">
+    <dt>Campus</dt><dd>{{ object.campus }}</dd>
+    <dt>Coordenadas</dt>
+    <dd>
+      <a href="https://www.google.com/maps?q={{ object.latitud }},{{ object.longitud }}"
+         target="_blank" rel="noopener">{{ object.latitud }}, {{ object.longitud }}</a>
+    </dd>
+  </dl>
+</div>
+
+{% comment %}
+Editar y eliminar viven aqui y no en la lista: en una fila con tres enlaces,
+el dedo acierta el que no era. Aqui ya estas mirando ESTE registro.
+{% endcomment %}
+{% if object.usuario_id == user.pk or user.es_admin %}
+<div class="acciones">
+  <a class="boton secundario" href="{% url 'reporte-update' object.pk %}">Editar</a>
+  <a class="boton secundario quitar" href="{% url 'reporte-delete' object.pk %}">Eliminar</a>
+</div>
+{% endif %}
+
+<p class="descargo">
+  Esto lo reportó alguien de la comunidad. Campus Seguro no verifica los
+  hechos ni detecta peligro.
+</p>
+{% endblock %}

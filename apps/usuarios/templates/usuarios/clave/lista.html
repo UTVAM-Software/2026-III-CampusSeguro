@@ -1,0 +1,14 @@
+{% extends 'usuarios/_marco_acceso.html' %}
+
+{% block titulo %}Contraseña cambiada{% endblock %}
+
+{% block contenido %}
+<div class="clave">
+  <h1 class="clave__titulo">Listo</h1>
+  <p class="clave__ayuda">
+    Tu contraseña quedó cambiada. Ya puedes entrar con ella.
+  </p>
+
+  <p class="clave__pie"><a class="boton bloque" href="{% url 'entrar' %}">Iniciar sesión</a></p>
+</div>
+{% endblock %}

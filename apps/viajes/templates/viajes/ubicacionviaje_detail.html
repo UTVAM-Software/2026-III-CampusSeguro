@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load fechas %}
+
+{% block volver %}<a class="atras" href="{% url 'ubicacion-list' %}">← Volver a ubicaciones</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre='viajes' %}Una posición</h1>
+  </div>
+  <p class="cabecera__meta">Registrada {{ object.fecha_registro|hace }}</p>
+</header>
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Dónde y cuándo</h2>
+  <dl class="datos-lista">
+    <dt>Viaje</dt>
+    <dd><a href="{% url 'viaje-detail' object.viaje_id %}">{{ object.viaje.origen }} → {{ object.viaje.destino }}</a></dd>
+    <dt>Coordenadas</dt>
+    <dd>
+      <a href="https://www.google.com/maps?q={{ object.latitud }},{{ object.longitud }}"
+         target="_blank" rel="noopener">{{ object.latitud }}, {{ object.longitud }}</a>
+    </dd>
+    <dt>Registrada</dt><dd>{{ object.fecha_registro|date:"d/m/Y H:i:s" }}</dd>
+  </dl>
+</div>
+
+<p class="descargo">
+  Esta posición la ven quien viaja y quienes aceptaron acompañarlo. Nadie más,
+  tampoco quien administra el campus.
+</p>
+{% endblock %}

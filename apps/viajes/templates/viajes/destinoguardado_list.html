@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+
+{% comment %}
+Los sitios a los que vas siempre.
+
+PARA QUÉ SIRVEN
+    Al planificar un viaje, en vez de escribir la misma dirección cada
+    semana, se elige "Casa" y ya. Lo mismo al comparar caminos.
+
+NO LOS VE NADIE MÁS
+    Es la lista de dónde vive alguien y a dónde va habitualmente. Ni quien
+    administra el campus la ve.
+{% endcomment %}
+
+{% block volver %}<a class="atras" href="{% url 'viaje-list' %}">← Volver a viajes</a>{% endblock %}
+
+{% block content %}
+<h1>Tus destinos</h1>
+<a class="boton" href="{% url 'destino-create' %}">Guardar un destino</a>
+
+{% if object_list %}
+<ul class="fichas">
+  {% for d in object_list %}
+    <li>
+      <div class="tarjeta">
+        <div class="ficha__cabecera">
+          <a class="ficha__titulo" href="{{ d.get_absolute_url }}">
+            {% include '_icono.html' with nombre='pin_ubicacion' %}{{ d.etiqueta }}
+          </a>
+        </div>
+
+        {% if d.referencia %}<p class="ficha__texto">{{ d.referencia }}</p>{% endif %}
+        <p class="ficha__meta">
+          <a href="https://www.google.com/maps?q={{ d.latitud }},{{ d.longitud }}"
+             target="_blank" rel="noopener">{{ d.latitud }}, {{ d.longitud }}</a>
+        </p>
+
+        <div class="acciones">
+          <a class="boton secundario" href="{% url 'destino-update' d.pk %}">Editar</a>
+          <a class="boton secundario quitar" href="{% url 'destino-delete' d.pk %}">Eliminar</a>
+        </div>
+      </div>
+    </li>
+  {% endfor %}
+</ul>
+{% else %}
+  {% include '_estado_vacio.html' with icono='pin_ubicacion' titulo='Todavía no has guardado ningún destino' texto='Guarda los sitios a los que vas siempre —casa, trabajo, la parada— y al planificar un viaje los eliges sin escribir la dirección otra vez.' only %}
+{% endif %}
+
+<p class="descargo">
+  Solo tú ves esta lista. Ni quien administra el campus puede abrirla.
+</p>
+{% endblock %}

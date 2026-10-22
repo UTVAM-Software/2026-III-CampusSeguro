@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load fechas %}
+{% block content %}
+<h1>Reportes</h1>
+<div class="acciones">
+  <a class="boton" href="{% url 'reporte-create' %}">Nuevo reporte</a>
+  {# Lo que TÚ has respondido. Sin esta puerta solo se llega a mano. #}
+  <a class="boton secundario" href="{% url 'confirmacion-list' %}">Tus respuestas</a>
+</div>
+
+{% if object_list %}
+<ul class="fichas">
+  {% for r in object_list %}
+    <li>
+      {% comment %}
+      La fila entera es el enlace al detalle, y desde alli se edita o se
+      borra. Antes habia tres enlaces por fila y el dedo acertaba el que no
+      era.
+      {% endcomment %}
+      <a class="ficha" href="{{ r.get_absolute_url }}">
+        <span class="ficha__cabecera">
+          <span class="ficha__titulo">
+            {% include '_icono.html' with nombre=r.icono %}{{ r.get_tipo_display }}
+          </span>
+          {% include '_insignia.html' with texto=r.get_estado_display tono=r.tono_estado %}
+        </span>
+        <p class="ficha__texto">{{ r.descripcion }}</p>
+        <p class="ficha__meta">{{ r.fecha_creacion|hace }} · por {{ r.usuario }}</p>
+      </a>
+    </li>
+  {% endfor %}
+</ul>
+{% else %}
+  {% include '_estado_vacio.html' with icono='condiciones_registradas' titulo='Todavía no hay reportes' texto='Lo que registre la comunidad del campus aparecerá aquí.' only %}
+{% endif %}
+{% endblock %}

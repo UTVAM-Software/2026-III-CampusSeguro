@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% comment %}
+Registrar o cambiar un punto de apoyo.
+
+Tiene la misma forma que el formulario de reportar, y a propósito: quien
+administra usa los dos, y dos pantallas que piden lo mismo de dos maneras
+distintas se aprenden dos veces.
+{% endcomment %}
+
+{% block extra_head %}
+  {% comment %}
+  Leaflet, para poder senalar el punto en el mapa. Version fija y con su
+  huella: el navegador rechaza el archivo si llega cambiado.
+  {% endcomment %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+        integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+{% endblock %}
+
+{% block volver %}<a class="atras" href="{% url 'punto-list' %}">← Volver a puntos de apoyo</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% if object %}Editar punto de apoyo{% else %}Nuevo punto de apoyo{% endif %}</h1>
+  </div>
+  <p class="cabecera__meta">
+    Enfermería, vigilancia, módulos de ayuda: dónde hay alguien a quien acudir.
+  </p>
+</header>
+
+<form class="formulario" method="post" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="aviso alerta" role="alert">
+      <span class="aviso__icono" aria-hidden="true">✕</span>
+      <div>
+        <p class="aviso__titulo">Revisa el formulario</p>
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% comment %}
+  El campus tambien en cajon: en la misma pantalla, dos listas que se abren
+  de dos maneras distintas se ven como un descuido.
+  {% endcomment %}
+  <div data-selector>
+    <div data-sin-js>{% include '_campo.html' with campo=form.campus %}</div>
+  </div>
+
+  {% include '_campo.html' with campo=form.nombre %}
+
+  {% comment %}
+  El tipo va en un cajón, igual que la categoría de un reporte: así se ve el
+  icono con el que va a salir en el mapa antes de elegirlo.
+  {% endcomment %}
+  <div data-selector>
+    <div data-sin-js>{% include '_campo.html' with campo=form.tipo %}</div>
+  </div>
+
+  {% include '_campo.html' with campo=form.descripcion %}
+  {% include '_campo.html' with campo=form.horario %}
+
+  {# ------------------------------ Ubicación ----------------------------- #}
+  <div class="tarjeta" data-ubicacion>
+    <h2 class="tarjeta__titulo">Ubicación</h2>
+
+    {{ form.latitud }}
+    {{ form.longitud }}
+
+    <div class="aviso" role="status">
+      <span class="aviso__icono" aria-hidden="true">◎</span>
+      <div>
+        <p class="aviso__titulo" data-titulo>Sin ubicación todavía</p>
+        <p data-estado>Hace falta para poder enseñarlo en el mapa del campus.</p>
+      </div>
+    </div>
+
+    {% comment %}
+    Señalar con el dedo. Los dos botones de arriba sirven para "estoy aquí" y
+    para una dirección; una caseta de vigilancia dentro del campus no tiene
+    dirección propia, y para eso hace falta el mapa.
+
+    Nace escondido y lo destapa el guion: sin Leaflet no se queda un recuadro
+    gris sin explicación.
+    {% endcomment %}
+    <div class="lienzo lienzo--chico" hidden>
+      <div data-mapa-ubicacion
+           {% if user.campus %}data-centro="{{ user.campus.latitud }},{{ user.campus.longitud }}"{% endif %}></div>
+    </div>
+
+    <button type="button" class="boton secundario bloque" data-mi-ubicacion>
+      Usar mi ubicación actual
+    </button>
+    <button type="button" class="boton secundario bloque" data-otra-direccion>
+      Escribir una dirección
+    </button>
+
+    <div class="buscador" data-buscador hidden>
+      <input type="text" data-direccion placeholder="Ej. Plaza Juárez, Pachuca, Hidalgo">
+      <button type="button" class="boton" data-buscar>Buscar</button>
+    </div>
+
+    {% for error in form.latitud.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+    {% for error in form.longitud.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+
+    <p class="campo__ayuda">
+      Ponte delante del punto y pulsa «Usar mi ubicación actual», o búscalo
+      por su dirección.
+    </p>
+
+    <noscript>
+      <p class="campo__error">
+        Para situar el punto hace falta JavaScript. Actívalo para poder
+        guardarlo.
+      </p>
+    </noscript>
+  </div>
+
+  {# ----------------------------- Disponible ----------------------------- #}
+  <label class="interruptor">
+    {{ form.activo }}
+    <span>
+      <span class="interruptor__nombre">{{ form.activo.label }}</span>
+      <span class="interruptor__ayuda">{{ form.activo.help_text }}</span>
+    </span>
+  </label>
+
+  <button type="submit" class="bloque">
+    {% if object %}Guardar cambios{% else %}Crear punto de apoyo{% endif %}
+  </button>
+</form>
+{% endblock %}
+
+{% block descargo %}
+  Los puntos de apoyo son información de contexto. Que uno exista no garantiza
+  que esté atendido en este momento.
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+          integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  {# mapa.js trae la capa de fondo, comun a todos los mapas del proyecto. #}
+  <script src="{% static 'js/mapa.js' %}?v={{ VERSION_CSS }}" defer></script>
+  <script src="{% static 'js/selector.js' %}?v={{ VERSION_CSS }}" defer></script>
+  <script src="{% static 'js/ubicacion.js' %}?v={{ VERSION_CSS }}" defer></script>
+{% endblock %}

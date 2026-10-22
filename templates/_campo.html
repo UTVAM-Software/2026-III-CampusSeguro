@@ -1,0 +1,20 @@
+{% comment %}
+Un campo de formulario: etiqueta, control, ayuda y errores.
+
+    {% include '_campo.html' with campo=form.correo %}
+
+Escrito a mano y no con `{{ form.as_p }}` porque así se controla el orden y el
+marcado: la ayuda va debajo y pequeña, y el error va pegado al campo que lo
+provoca, no todos juntos arriba.
+{% endcomment %}
+{% comment %}
+La etiqueta se escribe a mano y no con `label_tag` porque aquel le pega dos
+puntos al final -"Descripción:"-. En un formulario de una columna, donde la
+etiqueta ya está encima de su campo, los dos puntos no aclaran nada.
+{% endcomment %}
+<div class="campo">
+  <label for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+  {{ campo }}
+  {% if campo.help_text %}<small class="campo__ayuda">{{ campo.help_text }}</small>{% endif %}
+  {% for error in campo.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+</div>

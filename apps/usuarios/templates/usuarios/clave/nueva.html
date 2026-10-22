@@ -1,0 +1,36 @@
+{% extends 'usuarios/_marco_acceso.html' %}
+
+{% block titulo %}Pon una contraseña nueva{% endblock %}
+
+{% block contenido %}
+<div class="clave">
+  {% if validlink %}
+    <h1 class="clave__titulo">Pon una contraseña nueva</h1>
+    <p class="clave__ayuda">
+      Que no se parezca a tu correo ni a tu nombre, y que no sea solo números.
+    </p>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% for error in form.non_field_errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+      {% for campo in form %}{% include '_campo.html' with campo=campo %}{% endfor %}
+      <button type="submit" class="bloque">Guardar la contraseña</button>
+    </form>
+  {% else %}
+    {% comment %}
+    El enlace caducó o ya se usó. Django lo invalida en cuanto sirve para
+    cambiar la contraseña, porque el testigo lleva dentro el hash de la
+    anterior.
+    {% endcomment %}
+    <h1 class="clave__titulo">Este enlace ya no vale</h1>
+    <p class="clave__ayuda">
+      Pasó la media hora, o ya lo usaste. Los dos casos son a propósito: así
+      un enlace viejo que quede en el buzón no sirve para entrar.
+    </p>
+
+    <p class="clave__pie">
+      <a href="{% url 'clave-pedir' %}">Pedir uno nuevo</a>
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

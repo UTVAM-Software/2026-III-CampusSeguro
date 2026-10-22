@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block volver %}<a class="atras" href="{% url 'permiso-list' %}">← Volver a permisos</a>{% endblock %}
+
+{% block content %}
+<h1>{% if object %}Editar permiso{% else %}Nuevo permiso{% endif %}</h1>
+<p class="intro">
+  Un permiso nuevo no abre nada por sí solo: sirve para dárselo a un grupo y
+  para que una pantalla lo pida con <code>permission_required</code>.
+</p>
+
+<form method="post" class="formulario">
+  {% csrf_token %}
+  {% for error in form.non_field_errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+  {% include '_campo.html' with campo=form.name %}
+  {% include '_campo.html' with campo=form.codename %}
+  {% include '_campo.html' with campo=form.content_type %}
+  <button type="submit">Guardar</button>
+</form>
+<a class="boton secundario" href="{% if object %}{% url 'permiso-detail' object.pk %}{% else %}{% url 'permiso-list' %}{% endif %}">Cancelar</a>
+{% endblock %}

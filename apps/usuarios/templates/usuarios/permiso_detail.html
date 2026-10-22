@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+
+{% block volver %}<a class="atras" href="{% url 'permiso-list' %}">← Volver a permisos</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{{ object.name }}</h1>
+    {% if de_django %}{% include '_insignia.html' with texto='De Django' %}
+    {% elif not editable %}{% include '_insignia.html' with texto='Del sistema' %}
+    {% else %}{% include '_insignia.html' with texto='Propio' %}{% endif %}
+  </div>
+  <p class="cabecera__meta">{{ object.content_type.app_label }} · {{ object.content_type.name }}</p>
+</header>
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Cómo se pide en el código</h2>
+  <p><code>permission_required = '{{ object.content_type.app_label }}.{{ object.codename }}'</code></p>
+</div>
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Grupos que lo tienen</h2>
+  {% if grupos %}
+    <ul class="lista-llana">
+      {% for g in grupos %}<li><a href="{% url 'grupo-detail' g.pk %}">{{ g.name }}</a></li>{% endfor %}
+    </ul>
+  {% else %}
+    <p class="campo__ayuda">Ningún grupo lo tiene.</p>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Cuentas que lo tienen suelto</h2>
+  {% if cuentas %}
+    <ul class="lista-llana">
+      {% for u in cuentas %}<li><a href="{{ u.get_absolute_url }}">{{ u }}</a></li>{% endfor %}
+    </ul>
+  {% else %}
+    <p class="campo__ayuda">Ninguna cuenta lo tiene fuera de sus grupos.</p>
+  {% endif %}
+</div>
+
+{% if editable %}
+  <div class="acciones">
+    {% if perms.auth.change_permission %}<a class="boton secundario" href="{% url 'permiso-update' object.pk %}">Editar</a>{% endif %}
+    {% if perms.auth.delete_permission %}<a class="boton secundario quitar" href="{% url 'permiso-delete' object.pk %}">Eliminar</a>{% endif %}
+  </div>
+{% else %}
+  <p class="descargo">
+    Este permiso no se edita ni se borra: el código lo pide por su nombre y,
+    sin él, esas pantallas quedarían cerradas para todos.
+  </p>
+{% endif %}
+{% endblock %}

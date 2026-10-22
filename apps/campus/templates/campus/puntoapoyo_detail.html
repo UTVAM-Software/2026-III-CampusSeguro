@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% comment %}
+El detalle de un punto de apoyo.
+
+Lo que se viene a buscar aquí es si está abierto y cómo llegar. Eso va
+primero y grande; el resto es contexto.
+{% endcomment %}
+
+{% block volver %}<a class="atras" href="{% url 'punto-list' %}">← Volver a puntos de apoyo</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre=object.icono %}{{ object.nombre }}</h1>
+    {% if object.activo %}
+      {% include '_insignia.html' with texto=object.get_tipo_display %}
+    {% else %}
+      {% include '_insignia.html' with texto='Cerrado' tono='apagada' %}
+    {% endif %}
+  </div>
+  <p class="cabecera__meta">{{ object.get_tipo_display }} · {{ object.campus }}</p>
+</header>
+
+{% comment %}
+Un punto dado de baja sigue teniendo pantalla -alguien puede llegar aquí
+desde un enlace viejo-, pero lo dice antes que nada. Que alguien camine hasta
+una enfermería cerrada es exactamente lo que esto tiene que evitar.
+{% endcomment %}
+{% if not object.activo %}
+  <div class="aviso atencion" role="status">
+    <span class="aviso__icono" aria-hidden="true">⏱</span>
+    <div>
+      <p class="aviso__titulo">Este punto ya no está disponible</p>
+      <p>No aparece en la lista. Busca otro antes de ir hasta aquí.</p>
+    </div>
+  </div>
+{% endif %}
+
+{% if object.descripcion %}
+  <div class="tarjeta">
+    <p>{{ object.descripcion }}</p>
+  </div>
+{% endif %}
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Cómo llegar</h2>
+  <dl class="datos-lista">
+    <dt>Campus</dt><dd>{{ object.campus }}</dd>
+    {% if object.horario %}<dt>Horario</dt><dd>{{ object.horario }}</dd>{% endif %}
+    <dt>Coordenadas</dt>
+    <dd>
+      <a href="https://www.google.com/maps?q={{ object.latitud }},{{ object.longitud }}"
+         target="_blank" rel="noopener">{{ object.latitud }}, {{ object.longitud }}</a>
+    </dd>
+  </dl>
+</div>
+
+{# --------------------------- ¿Está mal algo? --------------------------- #}
+{% comment %}
+La comunidad avisa, la administración corrige.
+
+No se deja editar el punto a cualquiera: decir "aquí hay una enfermería" es
+decirle a alguien que puede caminar hasta ahí de noche y encontrar a una
+persona. Pero quien pasa por delante todos los días es quien se entera de que
+cerró, y desperdiciar eso sería tonto.
+{% endcomment %}
+<details class="correccion">
+  <summary class="correccion__abrir">¿Algo de esto está mal?</summary>
+
+  <form method="post" action="{% url 'punto-avisar' object.pk %}">
+    {% csrf_token %}
+    {% include '_campo.html' with campo=formulario_correccion.motivo %}
+    {% include '_campo.html' with campo=formulario_correccion.comentario %}
+    <button type="submit" class="boton secundario bloque">Avisar a la administración</button>
+  </form>
+
+  <p class="campo__ayuda">
+    Tu aviso no cambia el punto: lo revisa quien administra el campus. Un
+    punto no puede desaparecer del mapa porque varias personas digan que sí.
+  </p>
+</details>
+
+{% comment %}
+Editar y eliminar viven aqui y no en la lista: en una fila con tres enlaces,
+el dedo acierta el que no era. Aqui ya estas mirando ESTE registro.
+{% endcomment %}
+{% if perms.campus.change_puntoapoyo or perms.campus.delete_puntoapoyo %}
+<div class="acciones">
+  {% if perms.campus.change_puntoapoyo %}<a class="boton secundario" href="{% url 'punto-update' object.pk %}">Editar</a>{% endif %}
+  {% if perms.campus.delete_puntoapoyo %}<a class="boton secundario quitar" href="{% url 'punto-delete' object.pk %}">Eliminar</a>{% endif %}
+</div>
+{% endif %}
+
+<p class="descargo">
+  El horario y la ubicación los mantiene quien administra el campus. Si algo
+  no coincide, avísale.
+</p>
+{% endblock %}

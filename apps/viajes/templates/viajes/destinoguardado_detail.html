@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% comment %}
+La ficha de un destino guardado. Solo la ve quien lo guardó: es la dirección
+de su casa o de su trabajo.
+{% endcomment %}
+
+{% block volver %}<a class="atras" href="{% url 'destino-list' %}">← Volver a tus destinos</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre='pin_ubicacion' %}{{ object.etiqueta }}</h1>
+  </div>
+  {% if object.referencia %}<p class="cabecera__meta">{{ object.referencia }}</p>{% endif %}
+</header>
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Dónde está</h2>
+  <dl class="datos-lista">
+    <dt>Coordenadas</dt>
+    <dd>
+      <a href="https://www.google.com/maps?q={{ object.latitud }},{{ object.longitud }}"
+         target="_blank" rel="noopener">{{ object.latitud }}, {{ object.longitud }}</a>
+    </dd>
+    <dt>Guardado</dt><dd>{{ object.fecha_creacion|date:"d/m/Y" }}</dd>
+  </dl>
+</div>
+
+<div class="acciones">
+  <a class="boton" href="{% url 'viaje-create' %}">Planificar un viaje</a>
+  <a class="boton secundario" href="{% url 'destino-update' object.pk %}">Editar</a>
+  <a class="boton secundario quitar" href="{% url 'destino-delete' object.pk %}">Eliminar</a>
+</div>
+{% endblock %}

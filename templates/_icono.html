@@ -1,0 +1,21 @@
+{% load static %}{% comment %}
+Un icono de la marca, del color del texto que lo rodea.
+
+    {% include '_icono.html' with nombre='viajes' %}
+
+Los 26 iconos los dibujó Lady. Están en static/img/iconos/ y el nombre que se
+pasa aquí es el del archivo, sin .png.
+
+POR QUÉ NO ES UN <img>
+    Un <img> sale siempre del color con que se guardó. Aquí del PNG solo se usa
+    la silueta —con `mask` en la hoja de estilos— y el color lo pone el texto
+    que lo rodea. Así el mismo archivo sirve azul en una tarjeta, gris en un
+    texto apagado y blanco sobre fondo oscuro, sin guardar tres copias de cada
+    icono ni acordarse de cuál toca en cada sitio.
+
+VA ESCONDIDO DEL LECTOR DE PANTALLA
+    Casi siempre el icono acompaña a un texto que dice lo mismo —"Viajes" con
+    el icono de viajes—, así que anunciarlo sería repetir. Si algún día hace
+    falta uno que vaya solo y cargue el significado, ese necesitará su propia
+    etiqueta.
+{% endcomment %}<span class="icono" style="--icono: url({% static 'img/iconos/'|add:nombre|add:'.png' %})" aria-hidden="true"></span>

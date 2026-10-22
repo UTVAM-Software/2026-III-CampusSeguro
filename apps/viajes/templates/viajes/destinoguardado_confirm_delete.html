@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block volver %}<a class="atras" href="{% url 'destino-list' %}">← Volver a tus destinos</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>¿Borrar «{{ object.etiqueta }}»?</h1>
+  </div>
+  {% if object.referencia %}<p class="cabecera__meta">{{ object.referencia }}</p>{% endif %}
+</header>
+
+<div class="aviso" role="status">
+  <span class="aviso__icono" aria-hidden="true">i</span>
+  <div>
+    <p class="aviso__titulo">Esto no toca tus viajes</p>
+    <p>
+      Los que ya hiciste a este sitio se quedan en tu historial. Solo deja de
+      salir al planificar uno nuevo.
+    </p>
+  </div>
+</div>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit" class="quitar bloque">Sí, borrarlo</button>
+  <a class="boton secundario bloque" href="{% url 'destino-list' %}">No, dejarlo</a>
+</form>
+{% endblock %}

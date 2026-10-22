@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>¿Eliminar el grupo "{{ object.name }}"?</h1>
+
+<p class="mensaje">
+  Las cuentas no se borran: solo dejan de tener los permisos que les daba este
+  grupo. Siguen teniendo los de su rol.
+</p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Sí, eliminar</button>
+</form>
+<a class="boton secundario" href="{% url 'grupo-detail' object.pk %}">Cancelar</a>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block volver %}<a class="atras" href="{% url 'campus-list' %}">← Volver a campus</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre='puntos_apoyo' %}{{ object.nombre }}</h1>
+    {% if not object.activo %}
+      {% include '_insignia.html' with texto='Dado de baja' tono='apagada' %}
+    {% endif %}
+  </div>
+  {% if object.direccion %}<p class="cabecera__meta">{{ object.direccion }}</p>{% endif %}
+</header>
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Dónde está</h2>
+  <dl class="datos-lista">
+    <dt>Dirección</dt><dd>{% if object.direccion %}{{ object.direccion }}{% else %}—{% endif %}</dd>
+    <dt>Coordenadas</dt>
+    <dd>
+      <a href="https://www.google.com/maps?q={{ object.latitud }},{{ object.longitud }}"
+         target="_blank" rel="noopener">{{ object.latitud }}, {{ object.longitud }}</a>
+    </dd>
+  </dl>
+</div>
+
+{% if perms.campus.change_campus or perms.campus.delete_campus %}
+<div class="acciones">
+  {% if perms.campus.change_campus %}<a class="boton secundario" href="{% url 'campus-update' object.pk %}">Editar</a>{% endif %}
+  {% if perms.campus.delete_campus %}<a class="boton secundario quitar" href="{% url 'campus-delete' object.pk %}">Eliminar</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

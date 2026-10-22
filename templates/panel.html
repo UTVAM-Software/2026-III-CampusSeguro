@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% load fechas %}
+{% block volver %}{% endblock %}
+
+{% comment %}
+El panel de quien administra.
+
+LO QUE ESTA PANTALLA NO HACE
+    No predice nada. Compara dos periodos y lo dice con esas palabras. Un
+    aumento puede significar que pasan más cosas, o simplemente que más gente
+    está usando Campus Seguro: presentarlo como una previsión sería inventar
+    una capacidad que este sistema no tiene.
+
+LAS SECCIONES SON ENLACES A LAS LISTAS QUE YA EXISTEN
+    No hay un CRUD paralelo "de administración". La lista de reportes, la de
+    avisos y la de cuentas ya saben quién puede ver y tocar qué; una segunda
+    versión de cada una sería un segundo sitio donde arreglar los permisos.
+{% endcomment %}
+
+{% block content %}
+<header class="saludo">
+  <h1 class="saludo__nombre">Panel</h1>
+  <p class="saludo__campus">
+    {% if campus %}{{ campus.nombre }}{% else %}Tu cuenta no tiene campus asignado{% endif %}
+  </p>
+</header>
+
+<nav class="seccion" aria-label="Secciones de administración">
+  <ul class="chips">
+    <li><a class="chip" href="{% url 'panel' %}" aria-pressed="true">Resumen</a></li>
+    <li><a class="chip" href="{% url 'reporte-list' %}">Reportes</a></li>
+    <li><a class="chip" href="{% url 'aviso-list' %}">Avisos</a></li>
+    <li><a class="chip" href="{% url 'punto-list' %}">Puntos de apoyo</a></li>
+    <li>
+      <a class="chip" href="{% url 'correccion-list' %}">
+        Avisos sobre puntos{% if correcciones %} ({{ correcciones }}){% endif %}
+      </a>
+    </li>
+    {% comment %}
+    Campus y Cuentas son de SUPERADMINISTRACIÓN. Esconder los enlaces no es
+    lo que protege nada -eso lo hace `permission_required` en cada vista-:
+    esto es no ofrecer puertas que se cierran en la cara.
+    {% endcomment %}
+    {% if perms.usuarios.administrar_sistema %}
+      <li><a class="chip" href="{% url 'campus-list' %}">Campus</a></li>
+      <li><a class="chip" href="{% url 'usuario-list' %}">Cuentas</a></li>
+    {% endif %}
+    {% if perms.auth.view_group %}
+      <li><a class="chip" href="{% url 'grupo-list' %}">Grupos</a></li>
+    {% endif %}
+    {% if perms.auth.view_permission %}
+      <li><a class="chip" href="{% url 'permiso-list' %}">Permisos</a></li>
+    {% endif %}
+  </ul>
+</nav>
+
+{% comment %}
+Un campus sin dominios de correo admite a cualquiera con un Gmail, y eso no
+se nota desde ninguna pantalla: el registro funciona igual. Sin este aviso se
+queda asi para siempre sin que nadie se entere.
+{% endcomment %}
+{% if campus_sin_dominio and perms.usuarios.administrar_sistema %}
+  <div class="aviso atencion" role="status">
+    <span class="aviso__icono" aria-hidden="true">⚠</span>
+    <div>
+      <p class="aviso__titulo">
+        {{ campus_sin_dominio|length }} campus sin correo institucional configurado
+      </p>
+      <p>
+        Cualquiera puede registrarse en ellos con un correo personal y ver lo
+        que reporta esa comunidad. Pon sus dominios desde
+        <a href="{% url 'campus-list' %}">Campus</a>.
+      </p>
+    </div>
+  </div>
+{% endif %}
+
+{# ----------------------------- Cifras clave ---------------------------- #}
+<div class="metricas">
+  <div class="metrica">
+    <p class="metrica__valor">{{ resumen.total }}</p>
+    <p class="metrica__etiqueta">Reportes en total</p>
+  </div>
+  <div class="metrica {% if resumen.pendientes %}metrica--atencion{% endif %}">
+    <p class="metrica__valor">{{ resumen.pendientes }}</p>
+    <p class="metrica__etiqueta">Sin verificar</p>
+  </div>
+  <div class="metrica">
+    <p class="metrica__valor">{{ resumen.verificados }}</p>
+    <p class="metrica__etiqueta">Verificados</p>
+  </div>
+  <div class="metrica {% if correcciones %}metrica--atencion{% endif %}">
+    <p class="metrica__valor">{{ correcciones }}</p>
+    <p class="metrica__etiqueta">Avisos sobre puntos</p>
+  </div>
+</div>
+
+{# -------------------------- Esperan respuesta -------------------------- #}
+{% comment %}
+Va arriba porque es lo único de esta pantalla sobre lo que se puede ACTUAR.
+Las cifras se miran; esto se responde.
+{% endcomment %}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Esperan verificación</h2>
+
+  {% if pendientes %}
+    <ul class="fichas fichas--dentro">
+      {% for r in pendientes %}
+        <li>
+          <a class="ficha" href="{{ r.get_absolute_url }}">
+            <span class="ficha__cabecera">
+              <span class="ficha__titulo">
+                {% include '_icono.html' with nombre=r.icono %}{{ r.get_tipo_display }}
+              </span>
+              {% include '_insignia.html' with texto=r.get_estado_display tono=r.tono_estado %}
+            </span>
+            <p class="ficha__texto">{{ r.descripcion }}</p>
+            <p class="ficha__meta">Por {{ r.usuario }} · {{ r.fecha_creacion|hace }}</p>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    {% include '_estado_vacio.html' with icono='condiciones_registradas' titulo='No hay reportes esperando' texto='Todo lo que ha registrado la comunidad ya fue revisado.' only %}
+  {% endif %}
+</div>
+
+{# ------------------------------ Por estado ----------------------------- #}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Por estado</h2>
+  <dl class="datos-lista">
+    {% for etiqueta, total in estados %}
+      <dt>{{ etiqueta }}</dt><dd>{{ total }}</dd>
+    {% endfor %}
+  </dl>
+</div>
+
+{# ---------------------------- Por categoría ---------------------------- #}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Distribución por categoría</h2>
+
+  {% for fila in categorias %}
+    <div class="barra">
+      <div class="barra__linea">
+        <span class="barra__nombre">{{ fila.etiqueta }}</span>
+        <span class="barra__dato">{{ fila.total }} · {{ fila.porcentaje }}%</span>
+      </div>
+
+      {% comment %}
+      La barra lleva su propia etiqueta para el lector de pantalla: el dato
+      no puede depender solo de lo largo que sea un rectángulo.
+      {% endcomment %}
+      <div class="barra__riel" role="img"
+           aria-label="{{ fila.etiqueta }}: {{ fila.total }} reportes, {{ fila.porcentaje }} por ciento">
+        <div class="barra__relleno" style="width: {{ fila.porcentaje }}%"></div>
+      </div>
+    </div>
+  {% endfor %}
+</div>
+
+{# ----------------------------- Tendencia ------------------------------- #}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Últimos {{ tendencia.dias }} días</h2>
+
+  <p>
+    <strong class="tendencia__numero">{{ tendencia.actual }}</strong> reportes,
+    frente a {{ tendencia.previo }} en los {{ tendencia.dias }} días anteriores.
+  </p>
+
+  {% if tendencia.variacion is not None %}
+    <p class="ajustes__texto">
+      {% if tendencia.sube %}<span aria-hidden="true">▲</span> Subió
+      {% elif tendencia.baja %}<span aria-hidden="true">▼</span> Bajó
+      {% else %}Sin cambio{% endif %}
+      {{ tendencia.variacion }}%
+    </p>
+  {% else %}
+    {% comment %}
+    Sin periodo anterior no hay porcentaje. Pasar de cero a uno no es un
+    aumento del infinito por ciento: es un reporte.
+    {% endcomment %}
+    <p class="ajustes__texto">No hay periodo anterior con datos para comparar.</p>
+  {% endif %}
+
+  <p class="campo__ayuda">
+    Es una comparación entre dos periodos, no una predicción. Un aumento puede
+    significar que pasan más cosas, o simplemente que más gente está usando
+    Campus Seguro.
+  </p>
+</div>
+
+{# ---------------------------- Concentración ---------------------------- #}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Dónde se junta lo reportado</h2>
+
+  {% if zonas %}
+    <dl class="datos-lista">
+      {% for z in zonas %}
+        <dt>{{ z.latitud }}, {{ z.longitud }}</dt>
+        <dd>{{ z.total }} reportes</dd>
+      {% endfor %}
+    </dl>
+
+    {% comment %}
+    Esta frase no es relleno. Sin ella, una lista de coordenadas con números
+    al lado se lee como "estas son las zonas peligrosas", que es justo lo que
+    este sistema no sabe.
+    {% endcomment %}
+    <p class="campo__ayuda">
+      Agrupado en zonas de unos 110 m. No son zonas peligrosas: son los sitios
+      donde la gente ha registrado más cosas, que puede ser simplemente por
+      donde pasa más gente.
+    </p>
+  {% else %}
+    {% include '_estado_vacio.html' with icono='condiciones_registradas' titulo='Nada se concentra en una zona' texto='Ningún punto del campus acumula más de un reporte.' only %}
+  {% endif %}
+</div>
+{% endblock %}

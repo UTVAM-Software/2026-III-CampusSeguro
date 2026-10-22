@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static fechas iconos %}
+{% block volver %}{% endblock %}
+
+{% comment %}
+El mapa del campus.
+
+LO QUE ESTE MAPA NO DIBUJA
+    Zonas seguras y zonas peligrosas. Lo que hay son puntos: alguien registró
+    una condición en un sitio y una fecha. Colorear un barrio de rojo sería
+    afirmar algo que este sistema no sabe, y de paso señalar a quien vive
+    ahí.
+
+LAS FORMAS SE DISTINGUEN SIN COLOR
+    Las condiciones son círculos y los puntos de apoyo cuadrados. Quien no
+    distingue bien los colores sigue viendo cuál es cuál.
+{% endcomment %}
+
+{% block extra_head %}
+  {% comment %}
+  Leaflet desde cdnjs, con la versión fija y su huella (`integrity`): así el
+  navegador rechaza el archivo si llega cambiado. Sin fijar versión, una
+  actualización del CDN entraría sola en el proyecto.
+  {% endcomment %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+        integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+{% endblock %}
+
+{% block content %}
+<header class="saludo">
+  <h1 class="saludo__nombre">Mapa</h1>
+  <p class="saludo__campus">
+    {% if campus %}{{ campus.nombre }}{% else %}Sin campus asignado{% endif %}
+  </p>
+</header>
+
+<div class="lienzo">
+  <div id="mapa-lienzo" role="application"
+       aria-label="Mapa del campus con las condiciones registradas y los puntos de apoyo"></div>
+</div>
+
+{% comment %}
+La comparación de caminos no entra en la barra de navegación: son cinco
+áreas y no seis. Se llega desde aquí, que es donde alguien ya está mirando el
+campus y lo que se ha registrado en él.
+{% endcomment %}
+<a class="boton secundario bloque" href="{% url 'ruta-consultar' %}">
+  {% include '_icono.html' with nombre='dos_pines' %} Comparar caminos hasta un destino
+</a>
+
+{# ------------------------------- Filtros -------------------------------- #}
+<section class="seccion" aria-labelledby="titulo-filtros">
+  <h2 id="titulo-filtros">Filtrar por categoría</h2>
+
+  {% comment %}
+  Los filtros son enlaces, no casillas: viven en la dirección, así que un
+  filtro puesto se puede compartir y el botón de atrás lo deshace.
+  {% endcomment %}
+  <ul class="chips">
+    <li>
+      <a class="chip" href="{% url 'mapa' %}"
+         aria-pressed="{% if not categorias_activas %}true{% else %}false{% endif %}">
+        {% if not categorias_activas %}<span aria-hidden="true">✓</span>{% endif %} Todas
+      </a>
+    </li>
+    {% for valor, etiqueta in categorias %}
+      <li>
+        <a class="chip" href="?categoria={{ valor }}"
+           aria-pressed="{% if valor in categorias_activas %}true{% else %}false{% endif %}">
+          {% include '_icono.html' with nombre=valor|icono_de_tipo %}{{ etiqueta }}
+        </a>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+
+{# ------------------------ Condiciones registradas ----------------------- #}
+<section class="seccion" aria-labelledby="titulo-condiciones">
+  <h2 id="titulo-condiciones">
+    Condiciones preventivas registradas <span class="cuenta">({{ reportes|length }})</span>
+  </h2>
+
+  {% if reportes %}
+    <ul class="fichas">
+      {% for r in reportes %}
+        <li>
+          <a class="ficha" href="{{ r.get_absolute_url }}">
+            <span class="ficha__cabecera">
+              <span class="ficha__titulo">
+                {% include '_icono.html' with nombre=r.icono %}{{ r.get_tipo_display }}
+              </span>
+              {% include '_insignia.html' with texto=r.get_estado_display tono=r.tono_estado %}
+            </span>
+            <p class="ficha__texto">{{ r.descripcion }}</p>
+            <p class="ficha__meta">Registrado {{ r.fecha_creacion|hace }}</p>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="tarjeta">
+      {% comment %}
+      Dos huecos distintos que si se vieran igual confundirían: o no hay nada
+      registrado, o hay un filtro puesto que no deja ver lo que sí hay. Con
+      el filtro, la lupa y el botón que lo quita.
+      {% endcomment %}
+      {% if categorias_activas %}
+        {% url 'mapa' as ir_sin_filtro %}
+        {% include '_estado_vacio.html' with icono='lupa_mapa' titulo='Ninguna situación coincide con el filtro' texto='Puede haber condiciones registradas en esta zona, pero ninguna de las categorías que elegiste.' accion_url=ir_sin_filtro accion_texto='Quitar el filtro' only %}
+      {% else %}
+        {% include '_estado_vacio.html' with icono='condiciones_registradas' titulo='No hay situaciones registradas en esta zona' texto='Las condiciones que reporte la comunidad de tu campus aparecerán aquí.' only %}
+      {% endif %}
+    </div>
+  {% endif %}
+</section>
+
+{# --------------------------- Puntos de apoyo ---------------------------- #}
+<section class="seccion" aria-labelledby="titulo-puntos">
+  <h2 id="titulo-puntos">Puntos de apoyo</h2>
+
+  {% if puntos %}
+    <ul class="fichas">
+      {% for p in puntos|slice:":3" %}
+        <li>
+          <a class="ficha" href="{{ p.get_absolute_url }}">
+            <span class="ficha__cabecera">
+              <span class="ficha__titulo">
+                {% include '_icono.html' with nombre=p.icono %}{{ p.nombre }}
+              </span>
+              <span class="insignia">{{ p.get_tipo_display }}</span>
+            </span>
+            <p class="ficha__meta">{% if p.horario %}{{ p.horario }}{% else %}Sin horario registrado{% endif %}</p>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    <a class="boton secundario" href="{% url 'punto-list' %}">Ver todos</a>
+  {% else %}
+    <div class="tarjeta">
+      {% include '_estado_vacio.html' with icono='puntos_apoyo' titulo='Aún no hay puntos de apoyo cargados' texto='Enfermería, vigilancia, recepción y otros módulos de tu campus aparecerán aquí.' only %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+  {{ datos_mapa|json_script:"datos-mapa" }}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+          integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'js/mapa.js' %}?v={{ VERSION_CSS }}" defer></script>
+{% endblock %}

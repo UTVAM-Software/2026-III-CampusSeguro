@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block volver %}<a class="atras" href="{% url 'grupo-list' %}">← Volver a grupos</a>{% endblock %}
+
+{% block content %}
+<h1>{% if object %}Editar grupo{% else %}Nuevo grupo{% endif %}</h1>
+
+<form method="post" class="formulario">
+  {% csrf_token %}
+  {% for error in form.non_field_errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+
+  {% include '_campo.html' with campo=form.name %}
+  {% include '_casillas.html' with campo=form.permissions agrupar=True %}
+  {% if form.miembros %}{% include '_casillas.html' with campo=form.miembros %}{% endif %}
+
+  <button type="submit">Guardar</button>
+</form>
+<a class="boton secundario" href="{% if object %}{% url 'grupo-detail' object.pk %}{% else %}{% url 'grupo-list' %}{% endif %}">Cancelar</a>
+{% endblock %}

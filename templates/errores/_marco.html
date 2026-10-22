@@ -1,0 +1,39 @@
+{% load static %}{% comment %}
+El marco de las pantallas de error.
+
+NO EXTIENDE base.html, Y ES A PROPÓSITO
+    base.html lleva la barra de navegación con enlaces a campus, usuarios,
+    reportes… Un 500 significa que algo se rompió por dentro: ofrecer ahí cinco
+    enlaces más es invitar a que lo rompan otra vez. Y un 403 con el menú
+    completo delante es enseñar puertas que no se pueden abrir.
+
+    Así que esto se dibuja solo, con una salida y nada más.
+
+CADA PANTALLA LLENA TRES HUECOS
+    codigo   el número grande
+    titulo   qué pasó, en una línea
+    texto    qué puede hacer la persona
+{% endcomment %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Error{% endblock %} · Campus Seguro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v={{ VERSION_CSS }}">
+  {% include '_favicon.html' %}
+</head>
+<body class="pagina-error">
+  <main class="error">
+    <p class="error__codigo">{% block codigo %}{% endblock %}</p>
+    <h1 class="error__titulo">{% block titulo_visible %}{% endblock %}</h1>
+    <p class="error__texto">{% block texto %}{% endblock %}</p>
+
+    <a class="error__salida" href="/">Volver al inicio</a>
+
+    <p class="error__descargo">
+      Campus Seguro no detecta peligro ni garantiza seguridad física.
+    </p>
+  </main>
+</body>
+</html>

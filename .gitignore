@@ -9,6 +9,10 @@ __pycache__/
 # Base de datos local
 db.sqlite3
 
+# Las bases que crea `manage.py test --parallel`. Se colaron en un commit
+# por un `git add -A` descuidado.
+default_*.sqlite3
+
 # Variables de entorno (secretos)
 .env
 

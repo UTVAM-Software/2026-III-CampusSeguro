@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% comment %}
+Cambiar la contraseña.
+
+Pantalla aparte y no un bloque más dentro del perfil: se escriben tres
+contraseñas seguidas y eso merece la pantalla entera, sin otra cosa alrededor
+que distraiga de lo que se está haciendo.
+
+El formulario es `PasswordChangeForm` de Django: comprueba la actual, pasa la
+nueva por AUTH_PASSWORD_VALIDATORS -largo mínimo, que no sea de las más usadas
+del mundo, que no sea solo números, que no se parezca a tu correo- y renueva
+la sesión de este navegador para que el cambio no te eche a ti mismo.
+{% endcomment %}
+
+{% block volver %}<a class="atras" href="{% url 'perfil' %}?seccion=seguridad">← Volver al perfil</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre='escudo' %}Cambiar contraseña</h1>
+  </div>
+  <p class="cabecera__meta">
+    Hay que saber la actual. Así, quien encuentre tu teléfono con la sesión
+    abierta no puede dejarte fuera de tu propia cuenta.
+  </p>
+</header>
+
+<div class="tarjeta">
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    {% for error in form.non_field_errors %}
+      <p class="campo__error">{{ error }}</p>
+    {% endfor %}
+
+    {% for campo in form %}
+      {% include '_campo.html' with campo=campo %}
+    {% endfor %}
+
+    <button type="submit">Cambiar contraseña</button>
+  </form>
+</div>
+
+<p class="descargo">
+  Al cambiarla, la sesión de este dispositivo sigue abierta. Si quieres cerrar
+  las demás, eso está en Seguridad, dentro del perfil.
+</p>
+{% endblock %}
