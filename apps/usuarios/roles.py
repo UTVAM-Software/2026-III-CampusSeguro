@@ -42,7 +42,10 @@ TODO = ('view', 'add', 'change', 'delete')
 PERMISOS_ESTUDIANTE = [
     *_crud('campus', 'campus', 'view'),
     *_crud('campus', 'puntoapoyo', 'view'),
-    *_crud('campus', 'correccion', 'add'),          # avisar de un punto mal
+    # Avisar de que un punto está mal, y corregir lo que escribió. La vista
+    # de editar solo deja con los suyos y sin revisar -`get_queryset()`-, y
+    # dar por revisado un aviso pide `administrar_campus`, que es otra cosa.
+    *_crud('campus', 'correccion', 'add', 'change'),
     *_crud('reportes', 'reporte', *TODO),           # los suyos
     *_crud('reportes', 'reporteconfirmacion', *TODO),
     *_crud('viajes', 'viaje', *TODO),

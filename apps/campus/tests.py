@@ -338,3 +338,177 @@ class ColaDeAvisosTests(BaseConCuentas):
 
         self.assertEqual(respuesta.context['correcciones'], 1)
         self.assertContains(respuesta, '/correcciones/')
+
+
+class CrearYCorregirUnAvisoTests(BaseConCuentas):
+    """
+    Las dos pantallas que completan el CRUD de `Correccion`.
+
+    La puerta buena sigue siendo el boton dentro de la ficha del punto. Esta
+    es la pantalla suelta: se elige el punto de una lista.
+    """
+
+    def setUp(self):
+        super().setUp()
+
+        self.punto = PuntoApoyo.objects.create(
+            campus=self.campus, nombre='Enfermería', tipo='enfermeria',
+            latitud=19.8637, longitud=-98.9820,
+        )
+        self.de_otro_campus = PuntoApoyo.objects.create(
+            campus=self.otro_campus, nombre='Caseta', tipo='caseta',
+            latitud=19.4, longitud=-99.1,
+        )
+
+    def crear(self, quien, **extra):
+        datos = {
+            'punto': self.punto.pk, 'motivo': 'cerrado',
+            'comentario': 'Lleva cerrada un mes.',
+        }
+        datos.update(extra)
+        return self.entrar(quien).post('/correcciones/create/', datos)
+
+    # ----------------------------- Crear ------------------------------ #
+
+    def test_quien_estudia_puede_avisar_desde_la_pantalla_suelta(self):
+        self.crear(self.ana)
+
+        aviso = Correccion.objects.get()
+        self.assertEqual(aviso.punto, self.punto)
+        self.assertEqual(aviso.usuario, self.ana)
+        self.assertFalse(aviso.atendida)
+
+    def test_el_aviso_se_guarda_a_nombre_de_quien_lo_escribe(self):
+        """
+        `usuario` no esta en el formulario. Si estuviera, seria una lista con
+        todas las personas del campus para avisar a nombre de otra.
+        """
+        self.crear(self.ana, usuario=self.beto.pk)
+
+        self.assertEqual(Correccion.objects.get().usuario, self.ana)
+
+    def test_la_lista_de_puntos_se_recorta_al_campus(self):
+        """
+        Si no, el desplegable seria un directorio de los puntos de todas las
+        universidades.
+        """
+        opciones = self.entrar(self.ana).get(
+            '/correcciones/create/'
+        ).context['form'].fields['punto'].queryset
+
+        self.assertIn(self.punto, opciones)
+        self.assertNotIn(self.de_otro_campus, opciones)
+
+    def test_no_se_avisa_de_un_punto_de_otro_campus(self):
+        self.crear(self.ana, punto=self.de_otro_campus.pk)
+
+        self.assertFalse(Correccion.objects.exists())
+
+    def test_tampoco_se_avisa_dos_veces_de_lo_mismo(self):
+        """
+        Es la misma regla que en la ficha del punto. Sin ella aqui, esta
+        pantalla seria la puerta de atras para llenar la cola de quien
+        administra con diez avisos del mismo sitio.
+        """
+        self.crear(self.ana)
+        respuesta = self.crear(self.ana)
+
+        self.assertEqual(Correccion.objects.count(), 1)
+        self.assertContains(respuesta, 'todavía lo estamos revisando')
+
+    def test_pero_si_ya_lo_revisaron_se_puede_volver_a_avisar(self):
+        self.crear(self.ana)
+        Correccion.objects.update(atendida=True)
+
+        self.crear(self.ana)
+
+        self.assertEqual(Correccion.objects.count(), 2)
+
+    # ---------------------------- Corregir ---------------------------- #
+
+    def test_quien_lo_escribio_lo_corrige(self):
+        self.crear(self.ana)
+        aviso = Correccion.objects.get()
+
+        self.entrar(self.ana).post(f'/correcciones/{aviso.pk}/update/', {
+            'punto': self.punto.pk, 'motivo': 'horario',
+            'comentario': 'Me equivoqué: es el horario.',
+        })
+        aviso.refresh_from_db()
+
+        self.assertEqual(aviso.motivo, 'horario')
+
+    def test_nadie_mas_lo_corrige(self):
+        """
+        Un aviso es el relato de alguien. Que la administracion pudiera
+        reescribirlo dejaria a esa persona diciendo algo que no dijo.
+
+        404 y no 403: un 403 confirmaria que ese aviso existe.
+        """
+        self.crear(self.ana)
+        aviso = Correccion.objects.get()
+
+        for quien in (self.beto, self.jefa, self.mandamas):
+            with self.subTest(rol=quien.rol):
+                self.assertEqual(
+                    self.entrar(quien).get(
+                        f'/correcciones/{aviso.pk}/update/'
+                    ).status_code,
+                    404,
+                )
+
+    def test_una_vez_revisado_ya_no_se_toca(self):
+        """
+        Cambiarlo despues reescribe lo que ya se leyo y sobre lo que ya se
+        decidio. A partir de ahi es historial.
+        """
+        self.crear(self.ana)
+        Correccion.objects.update(atendida=True)
+        aviso = Correccion.objects.get()
+
+        self.assertEqual(
+            self.entrar(self.ana).get(
+                f'/correcciones/{aviso.pk}/update/'
+            ).status_code,
+            404,
+        )
+
+    def test_corregir_un_aviso_NO_lo_da_por_revisado(self):
+        """
+        Son dos acciones distintas y piden permisos distintos: dar por
+        revisado es `administrar_campus`.
+        """
+        self.crear(self.ana)
+        aviso = Correccion.objects.get()
+
+        self.entrar(self.ana).post(f'/correcciones/{aviso.pk}/update/', {
+            'punto': self.punto.pk, 'motivo': 'horario', 'comentario': '',
+        })
+        aviso.refresh_from_db()
+
+        self.assertFalse(aviso.atendida)
+
+    def test_quien_estudia_no_da_por_revisado_ningun_aviso(self):
+        """
+        Lo que se arreglo al anadir estas pantallas: `atender` pedia
+        `change_correccion`, el mismo permiso que hace falta para corregir el
+        aviso propio. Con el, quien estudia habria podido vaciar la cola de
+        la administracion.
+        """
+        self.crear(self.ana)
+        aviso = Correccion.objects.get()
+
+        respuesta = self.entrar(self.ana).post(f'/correcciones/{aviso.pk}/atender/')
+        aviso.refresh_from_db()
+
+        self.assertEqual(respuesta.status_code, 403)
+        self.assertFalse(aviso.atendida)
+
+    def test_quien_administra_si(self):
+        self.crear(self.ana)
+        aviso = Correccion.objects.get()
+
+        self.entrar(self.jefa).post(f'/correcciones/{aviso.pk}/atender/')
+        aviso.refresh_from_db()
+
+        self.assertTrue(aviso.atendida)

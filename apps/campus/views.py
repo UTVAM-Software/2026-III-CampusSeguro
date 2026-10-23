@@ -9,7 +9,7 @@ from django.views.generic import (
 
 from apps.usuarios.permisos import PermisoRequeridoMixin
 
-from .forms import CorreccionForm, PuntoApoyoForm
+from .forms import CorreccionCompletaForm, CorreccionForm, PuntoApoyoForm
 from .models import Campus, Correccion, PuntoApoyo
 
 
@@ -200,9 +200,16 @@ class AtenderCorreccionView(PermisoRequeridoMixin, View):
         su formulario. Que un aviso cerrara la enfermería automáticamente
         sería una forma de borrarla del mapa poniéndose de acuerdo unas
         cuantas personas.
+
+    PIDE `administrar_campus`, NO `change_correccion`
+        Porque es eso: una acción de quien administra, no "editar el
+        registro". Quien escribió un aviso tiene `change_correccion` para
+        poder corregir el suyo; si esta vista pidiera lo mismo, con ese
+        permiso podría dar por revisado cualquier aviso de su campus y
+        vaciar la cola de la administración.
     """
 
-    permission_required = 'campus.change_correccion'
+    permission_required = 'usuarios.administrar_campus'
     def post(self, request, pk):
         correccion = get_object_or_404(
             Correccion, pk=pk, punto__campus=request.user.campus
@@ -236,3 +243,69 @@ class CorreccionDeleteView(PermisoRequeridoMixin, CorreccionesDeMiCampusMixin, D
     permission_required = 'campus.delete_correccion'
     model = Correccion
     success_url = reverse_lazy('correccion-list')
+
+class QuienAvisaMixin:
+    """Le pasa al formulario quién está avisando, para recortar la lista."""
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['usuario'] = self.request.user
+        return kwargs
+
+
+class CorreccionCreateView(PermisoRequeridoMixin, QuienAvisaMixin, CreateView):
+    """
+    Avisar eligiendo el punto de una lista.
+
+    POR QUÉ EXISTE SI YA ESTÁ EL BOTÓN EN LA FICHA DEL PUNTO
+        Aquella es la puerta buena: se avisa mirando el punto del que se
+        habla. Esta sirve cuando ya sabes cuál es y no quieres ir a buscarlo,
+        y completa el CRUD de la entidad.
+
+        Las dos pasan por la misma regla de no avisar dos veces de lo mismo,
+        y la lista de puntos se recorta al campus de quien mira.
+    """
+
+    permission_required = 'campus.add_correccion'
+    model = Correccion
+    form_class = CorreccionCompletaForm
+
+    def form_valid(self, form):
+        # De quién es el aviso lo dice la sesión, no el formulario. Si
+        # estuviera ahí, sería una lista con todas las personas del campus
+        # para avisar a nombre de otra.
+        form.instance.usuario = self.request.user
+        messages.success(
+            self.request, 'Gracias. Quien administra el campus lo va a revisar.'
+        )
+        return super().form_valid(form)
+
+
+class CorreccionUpdateView(PermisoRequeridoMixin, QuienAvisaMixin, UpdateView):
+    """
+    Corregir lo que escribiste en un aviso.
+
+    SOLO QUIEN LO ESCRIBIÓ, Y SOLO MIENTRAS NO LO HAYAN REVISADO
+        Lo primero porque un aviso es el relato de alguien: que la
+        administración pudiera reescribirlo dejaría a esa persona diciendo
+        algo que no dijo.
+
+        Lo segundo porque, una vez revisado, cambiarlo reescribe lo que ya se
+        leyó y sobre lo que ya se decidió. A partir de ahí es historial.
+
+        Las dos cosas van en `get_queryset()`, así que lo que no cumple
+        responde 404 y no 403: un 403 confirmaría que ese aviso existe.
+    """
+
+    permission_required = 'campus.change_correccion'
+    model = Correccion
+    form_class = CorreccionCompletaForm
+
+    def get_queryset(self):
+        return Correccion.objects.filter(
+            usuario=self.request.user, atendida=False
+        ).select_related('punto')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Listo, actualizamos tu aviso.')
+        return super().form_valid(form)

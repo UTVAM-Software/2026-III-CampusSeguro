@@ -6,6 +6,7 @@ from .views import (
     PuntoListView, PuntoDetailView, PuntoCreateView,
     PuntoUpdateView, PuntoDeleteView,
     AvisarDePuntoView, CorreccionListView, AtenderCorreccionView,
+    CorreccionCreateView, CorreccionUpdateView,
     CorreccionDetailView, CorreccionDeleteView,
 )
 from django.contrib.auth.decorators import login_required
@@ -30,6 +31,8 @@ urlpatterns = [
     path('puntos-apoyo/<int:pk>/avisar/', login_required(AvisarDePuntoView.as_view()), name='punto-avisar'),
     path('correcciones/', login_required(CorreccionListView.as_view()), name='correccion-list'),
     path('correcciones/<int:pk>/atender/', login_required(AtenderCorreccionView.as_view()), name='correccion-atender'),
+    path('correcciones/create/', login_required(CorreccionCreateView.as_view()), name='correccion-create'),
     path('correcciones/<int:pk>/', login_required(CorreccionDetailView.as_view()), name='correccion-detail'),
+    path('correcciones/<int:pk>/update/', login_required(CorreccionUpdateView.as_view()), name='correccion-update'),
     path('correcciones/<int:pk>/delete/', login_required(CorreccionDeleteView.as_view()), name='correccion-delete'),
 ]

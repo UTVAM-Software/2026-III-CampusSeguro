@@ -112,3 +112,63 @@ class CorreccionForm(forms.ModelForm):
         self.fields['motivo'].choices = (
             [('', 'Elige qué está mal')] + list(Correccion.MOTIVOS)
         )
+
+
+class CorreccionCompletaForm(CorreccionForm):
+    """
+    El mismo aviso, pero eligiendo el punto de una lista.
+
+    POR QUÉ HAY DOS FORMULARIOS
+        `CorreccionForm` vive dentro de la ficha de un punto: ahí el punto lo
+        dice la dirección y preguntarlo otra vez sobraría.
+
+        Este es para la pantalla suelta de «Nuevo aviso», donde todavía no se
+        sabe de cuál se habla. Hereda todo lo demás para que las dos digan lo
+        mismo: si mañana cambia una etiqueta, cambia en los dos.
+
+    LA LISTA DE PUNTOS SE RECORTA AL CAMPUS
+        Si no, el desplegable sería un directorio de los puntos de todas las
+        universidades, y se podría avisar de uno que esa persona no debería
+        ni ver.
+    """
+
+    class Meta(CorreccionForm.Meta):
+        fields = ['punto', 'motivo', 'comentario']
+        labels = {**CorreccionForm.Meta.labels, 'punto': '¿De qué punto hablas?'}
+
+    def __init__(self, *args, usuario=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.usuario = usuario
+
+        puntos = PuntoApoyo.objects.select_related('campus')
+
+        if usuario is not None and not usuario.es_admin:
+            puntos = puntos.filter(campus=usuario.campus)
+
+        self.fields['punto'].queryset = puntos
+        self.fields['punto'].empty_label = 'Elige un punto de apoyo'
+
+    def clean(self):
+        """
+        No se avisa dos veces de lo mismo.
+
+        Es la misma regla que en la ficha del punto, y tiene que estar
+        también aquí: si no, esta pantalla sería la puerta de atrás para
+        llenar la cola de quien administra con diez avisos del mismo sitio.
+        """
+        datos = super().clean()
+        punto = datos.get('punto')
+
+        if punto is None or self.usuario is None:
+            return datos
+
+        repetidos = Correccion.objects.filter(
+            punto=punto, usuario=self.usuario, atendida=False
+        ).exclude(pk=self.instance.pk)
+
+        if repetidos.exists():
+            raise forms.ValidationError(
+                'Ya avisaste de este punto y todavía lo estamos revisando.'
+            )
+
+        return datos

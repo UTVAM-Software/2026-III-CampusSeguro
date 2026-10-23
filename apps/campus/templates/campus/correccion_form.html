@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% comment %}
+Avisar de que un punto de apoyo está mal, eligiendo el punto de una lista.
+
+La puerta buena sigue siendo el botón «¿Algo de esto está mal?» dentro de la
+ficha del punto: ahí se avisa mirando el punto del que se habla. Esta
+pantalla sirve cuando ya sabes cuál es, y completa el CRUD de la entidad.
+{% endcomment %}
+
+{% block volver %}
+  <a class="atras" href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'correccion-list' %}{% endif %}">
+    ← Volver{% if not object %} a los avisos{% endif %}
+  </a>
+{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% if object %}Corregir tu aviso{% else %}Avisar de un punto{% endif %}</h1>
+  </div>
+  <p class="cabecera__meta">
+    {% if object %}
+      Puedes cambiarlo mientras no lo hayan revisado.
+    {% else %}
+      Si una enfermería cerró o un horario ya no coincide, dilo aquí.
+    {% endif %}
+  </p>
+</header>
+
+<form class="formulario" method="post" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="aviso alerta" role="alert">
+      <span class="aviso__icono" aria-hidden="true">✕</span>
+      <div>
+        <p class="aviso__titulo">Revisa el formulario</p>
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% include '_campo.html' with campo=form.punto %}
+  {% include '_campo.html' with campo=form.motivo %}
+  {% include '_campo.html' with campo=form.comentario %}
+
+  <button type="submit" class="bloque">
+    {% if object %}Guardar los cambios{% else %}Avisar a la administración{% endif %}
+  </button>
+</form>
+{% endblock %}
+
+{% block descargo %}
+  Tu aviso no cambia el punto: lo revisa quien administra el campus. Un punto
+  no puede desaparecer del mapa porque varias personas digan que sí.
+{% endblock %}

@@ -16,6 +16,12 @@ ATENDER UN AVISO NO TOCA EL PUNTO
 {% block content %}
 <h1>Avisos sobre puntos de apoyo</h1>
 
+{% if perms.campus.add_correccion %}
+  <div class="acciones">
+    <a class="boton" href="{% url 'correccion-create' %}">Nuevo aviso</a>
+  </div>
+{% endif %}
+
 <section class="seccion">
   <h2>Esperan revisión</h2>
 

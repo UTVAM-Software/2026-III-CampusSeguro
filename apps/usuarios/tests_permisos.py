@@ -106,6 +106,10 @@ QUIEN_ENTRA = {
     'aviso-create': SOLO_ADMIN,
     'aviso-update': SOLO_ADMIN,
     'aviso-delete': SOLO_ADMIN,
+    # Avisar de que un punto está mal lo puede cualquiera; corregir el
+    # aviso, solo quien lo escribió y mientras no lo hayan revisado.
+    'correccion-create': CUALQUIERA,
+    'correccion-update': SOLO_TUYO,
     'correccion-list': SOLO_ADMIN,
     'correccion-atender': SOLO_ADMIN,
     'correccion-detail': SOLO_ADMIN,
@@ -269,6 +273,7 @@ class QuienEntraDondeTests(TestCase):
             'usuario-delete': [cls.duena.pk],
             'correccion-atender': [correccion.pk],
             'correccion-detail': [correccion.pk],
+            'correccion-update': [correccion.pk],
             'correccion-delete': [correccion.pk],
             'destino-update': [destino.pk], 'destino-delete': [destino.pk],
             'destino-detail': [destino.pk],
