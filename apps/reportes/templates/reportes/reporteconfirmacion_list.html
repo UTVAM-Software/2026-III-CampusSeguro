@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Confirmaciones de reporte</h1>
+<a class="boton" href="{% url 'confirmacion-create' %}">Nueva confirmación</a>
+<h2>Reportes</h2>
+<div style="overflow-x: auto;">
+  <table class="tabla">
+    <thead>
+      <tr>
+        <th>Reporte</th><th>Reportado por</th><th>Campus</th>
+        <th>✔</th><th>✘</th><th>Estado</th><th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in reportes %}
+      <tr>
+        <td>{{ r }}</td>
+        <td>{{ r.usuario }}</td>
+        <td>{{ r.campus }}</td>
+        <td>{{ r.si }}</td>
+        <td>{{ r.no }}</td>
+        <td>{{ r.get_estado_display }}</td>
+        <td><a class="boton secundario" href="{{ r.get_absolute_url }}">Responder</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7">No hay reportes.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2>Respuestas</h2>
+{% if object_list %}
+<ul class="filas">
+  {% for c in object_list %}
+    <li>
+      <a href="{{ c.get_absolute_url }}">{{ c }}</a>
+      {% include '_insignia.html' with texto=c.confirma|yesno:"Lo confirma,Lo niega" tono=c.confirma|yesno:"exito,apagada" %}
+      <a class="accion" href="{% url 'confirmacion-update' c.pk %}">Editar</a>
+      <a class="accion quitar" href="{% url 'confirmacion-delete' c.pk %}">Eliminar</a>
+    </li>
+  {% endfor %}
+</ul>
+{% else %}
+  {% include '_estado_vacio.html' with icono='condiciones_registradas' titulo='Nadie ha respondido todavía' texto='Cuando alguien diga si un reporte es cierto o no, su respuesta aparecerá aquí.' only %}
+{% endif %}
+{% endblock %}

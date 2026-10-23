@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+        integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+{% endblock %}
+
+{% block volver %}<a class="atras" href="{% url 'destino-list' %}">← Volver a tus destinos</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% if object %}Editar destino{% else %}Guardar un destino{% endif %}</h1>
+  </div>
+  <p class="cabecera__meta">
+    Un sitio al que vas seguido, para no escribir la dirección cada vez.
+  </p>
+</header>
+
+<form class="formulario" method="post" novalidate>
+  {% csrf_token %}
+
+  {% for error in form.non_field_errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+
+  {% include '_campo.html' with campo=form.etiqueta %}
+  {% include '_campo.html' with campo=form.referencia %}
+
+  <div class="tarjeta" data-ubicacion>
+    <h2 class="tarjeta__titulo">Dónde está</h2>
+
+    {{ form.latitud }}
+    {{ form.longitud }}
+
+    <div class="aviso" role="status">
+      <span class="aviso__icono" aria-hidden="true">◎</span>
+      <div>
+        <p class="aviso__titulo" data-titulo>Sin ubicación todavía</p>
+        <p data-estado>Señálalo en el mapa, o busca su dirección.</p>
+      </div>
+    </div>
+
+    <div class="lienzo lienzo--chico" hidden>
+      <div data-mapa-ubicacion
+           {% if user.campus %}data-centro="{{ user.campus.latitud }},{{ user.campus.longitud }}"{% endif %}></div>
+    </div>
+
+    <button type="button" class="boton secundario bloque" data-mi-ubicacion>
+      Usar mi ubicación actual
+    </button>
+    <button type="button" class="boton secundario bloque" data-otra-direccion>
+      Escribir una dirección
+    </button>
+
+    <div class="buscador" data-buscador hidden>
+      <input type="text" data-direccion placeholder="Ej. Plaza Juárez, Pachuca, Hidalgo">
+      <button type="button" class="boton" data-buscar>Buscar</button>
+    </div>
+
+    {% for error in form.latitud.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+    {% for error in form.longitud.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+
+    <noscript>
+      <p class="campo__error">
+        Para señalar el sitio hace falta JavaScript. Actívalo para poder
+        guardarlo.
+      </p>
+    </noscript>
+  </div>
+
+  <button type="submit" class="bloque">
+    {% if object %}Guardar cambios{% else %}Guardar destino{% endif %}
+  </button>
+</form>
+{% endblock %}
+
+{% block descargo %}
+  Solo tú ves tus destinos. Ni quien administra el campus puede abrirlos.
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+          integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="{% static 'js/mapa.js' %}?v={{ VERSION_CSS }}" defer></script>
+  <script src="{% static 'js/ubicacion.js' %}?v={{ VERSION_CSS }}" defer></script>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% comment %}
+Los permisos de Django. Cada modelo tiene cuatro que Django crea solo (Ver,
+Crear, Editar, Eliminar); los demás son propios del proyecto o se crearon
+desde aquí. Las vistas los piden con `permission_required`.
+{% endcomment %}
+
+{% block volver %}<a class="atras" href="{% url 'grupo-list' %}">← Volver a grupos</a>{% endblock %}
+
+{% block content %}
+<h1>Permisos</h1>
+<p class="intro">
+  Cada pantalla pide uno de estos permisos. Se reparten a las cuentas a
+  través de sus grupos, o sueltos desde la ficha de cada cuenta.
+</p>
+
+{% if perms.auth.add_permission %}
+  <a class="boton" href="{% url 'permiso-create' %}">Nuevo permiso</a>
+{% endif %}
+
+{% for modelo, lista in por_modelo %}
+  <section class="seccion">
+    <h2>{{ modelo }}</h2>
+    <ul class="filas">
+      {% for permiso, etiqueta in lista %}
+        <li>
+          <a href="{% url 'permiso-detail' permiso.pk %}">{{ etiqueta }}</a>
+          <code class="ficha__meta">{{ permiso.content_type.app_label }}.{{ permiso.codename }}</code>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endfor %}
+{% endblock %}

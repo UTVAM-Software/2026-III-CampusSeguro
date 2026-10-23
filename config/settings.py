@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 import os
+from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -46,11 +47,15 @@ INSTALLED_APPS = [
     'apps.reportes',
     'apps.viajes',
     'apps.comunicacion',
+    'apps.rutas',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    # El idioma de cada petición (va después de sesiones y antes de Common,
+    # como pide Django). Ver LANGUAGES más abajo.
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -63,14 +68,26 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # La fecha de la hoja de estilos, para que el navegador no
+                # se quede con una copia vieja. Ver config/contexto.py.
+                'config.contexto.version_css',
+                'config.contexto.navegacion',
+                'config.contexto.seccion_activa',
             ],
+            # El filtro `hace` no es de ninguna app -lo usan reportes, viajes y
+            # comunicacion-, asi que se registra aqui en vez de inventar una
+            # app vacia donde colgarlo.
+            'libraries': {
+                'fechas': 'config.fechas',
+                'iconos': 'config.iconos',
+            },
         },
     },
 ]
@@ -87,6 +104,47 @@ DATABASES = {
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
+
+# La cuenta de este proyecto es apps.usuarios.Usuario y no el User de Django:
+# se entra con el correo, no con un nombre de usuario.
+AUTH_USER_MODEL = 'usuarios.Usuario'
+
+
+# A donde manda Django a quien no ha entrado, y a donde va cada quien
+# despues de entrar o de salir.
+LOGIN_URL = 'entrar'
+LOGIN_REDIRECT_URL = 'index'
+LOGOUT_REDIRECT_URL = 'entrar'
+
+# La cookie de sesion no se puede leer desde JavaScript: si algun dia se cuela
+# un script en una pagina, al menos no se lleva la sesion de quien la abra.
+SESSION_COOKIE_HTTPONLY = True
+
+# Y no se manda cuando la peticion viene de otro sitio. Es lo que corta los
+# ataques donde otra pagina hace que tu navegador actue en esta con tu sesion.
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+
+# Solo por HTTPS, y solo fuera de desarrollo: en local se trabaja por http y
+# con esto encendido la sesion no se guardaria nunca.
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+
+
+# Con que se cifran las contrasenas. Argon2id va primero: gano el concurso de
+# cifrado de contrasenas de 2015 y es el que recomienda OWASP. Esta pensado
+# para ser lento y comer memoria a proposito, que es lo que encarece probar
+# millones de claves si algun dia alguien se lleva la tabla de usuarios.
+#
+# Los otros dos se quedan detras para poder LEER contrasenas guardadas antes
+# con ellos: Django las reconoce al entrar y las vuelve a guardar con Argon2
+# sin que nadie tenga que hacer nada.
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+]
 
 
 # Password validation
@@ -111,12 +169,30 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+# Todo lo que escribe Django -las etiquetas de los formularios, los mensajes
+# de error de las contrasenas, los nombres de los meses- sale en este idioma.
+# Estaba en 'en-us' y por eso la pantalla de entrar decia "Password:" en medio
+# de una aplicacion en espanol.
+LANGUAGE_CODE = 'es-mx'
 
-TIME_ZONE = 'UTC'
+# Los idiomas que ofrece el sitio. Solo uno: con LocaleMiddleware (arriba, en
+# MIDDLEWARE) Django elegiría el del navegador de cada visita, y una persona
+# con el navegador en inglés vería mensajes de Django en inglés en medio de
+# una app en español. Con un solo idioma en la lista, siempre es este.
+LANGUAGES = [
+    ('es-mx', 'Español (México)'),
+]
 
+# La hora de México: las fechas de los reportes y los viajes se guardan en UTC
+# (USE_TZ) y se muestran en esta zona.
+TIME_ZONE = 'America/Mexico_City'
+
+# Traducciones de Django encendidas: "Password" -> "Contraseña", meses en
+# español, mensajes de error de formularios en español.
 USE_I18N = True
 
+# Fechas guardadas con su zona horaria. Sin esto, un reporte de las 23:30 se
+# mostraría con la hora del servidor y podría aparecer en el día equivocado.
 USE_TZ = True
 
 
@@ -124,8 +200,91 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATICFILES_DIRS = [BASE_DIR / 'static']
+
+# Archivos que sube la gente (por ahora, la foto de un reporte). Van aparte de
+# los estáticos del proyecto: estos no se escriben a mano, llegan de fuera.
+# media/ ya está en .gitignore, así que no acaban en el repositorio.
+MEDIA_URL = 'media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# ---- La foto de perfil ----
+#
+# Se ve a 48 px en la lateral y a 80 px en el perfil. Guardar el original de
+# un telefono -4000 px, varios megas- significa que cada pantalla que ensene
+# el avatar se descarga eso entero para pintarlo del tamano de una moneda, y
+# quien lo descarga suele estar con datos moviles. El formulario la reduce a
+# este lado antes de guardarla.
+LADO_FOTO_PERFIL = 256
+
+# Lo que se acepta recibir. El limite se comprueba en el servidor, no solo en
+# el navegador: el `accept` del campo de archivo es una comodidad, no una
+# barrera -se salta mandando la peticion a mano-.
+FOTO_PERFIL_MAX_BYTES = 2 * 1024 * 1024
+
+# La foto de un reporte admite mas: es la prueba de lo que se esta contando y
+# se mira entera, no en un circulo de 48 px.
+FOTO_REPORTE_MAX_BYTES = 5 * 1024 * 1024
+
+
+# ---- El servicio de rutas a pie ----
+#
+# La instancia de peaton de FOSSGIS, la que mueve el propio sitio de
+# OpenStreetMap. NO la de demostracion de OSRM: aquella ignora el perfil y
+# devuelve rutas de coche aunque se le pida `foot`, con sus tiempos a 20 km/h.
+#
+# Es configurable por si algun dia se levanta una instancia propia, pero NUNCA
+# llega de quien usa la aplicacion: es el host al que sale la unica peticion
+# externa del proyecto.
+OSRM_HOST = os.environ.get(
+    'OSRM_HOST', 'https://routing.openstreetmap.de/routed-foot'
+)
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+# --------------------------------------------------------------------------- #
+# El correo
+# --------------------------------------------------------------------------- #
+#
+# Hace falta para una sola cosa, y es importante: recuperar la contrasena.
+# Sin correo, quien olvide la suya se queda fuera de su cuenta para siempre y
+# solo se arregla por consola.
+#
+# EN DESARROLLO SE IMPRIME EN LA TERMINAL
+#     El backend de consola escribe el mensaje entero -enlace incluido- donde
+#     corre el servidor. Se puede probar el circuito completo sin configurar
+#     ningun servidor de correo y sin mandarle nada a nadie por error.
+#
+#     Fuera de desarrollo se usa SMTP de verdad, y si no esta configurado hay
+#     una comprobacion mas abajo que lo dice al arrancar. Un fallo silencioso
+#     aqui significa gente que pide el enlace y espera un mensaje que no sale
+#     de la maquina.
+if DEBUG:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+
+EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+
+DEFAULT_FROM_EMAIL = os.environ.get(
+    'DEFAULT_FROM_EMAIL', 'Campus Seguro <no-responder@campusseguro.local>'
+)
+
+# Cuanto vale el enlace de recuperacion. Media hora: suficiente para abrir el
+# correo y escribir una contrasena, poco para que sirva si alguien encuentra
+# el mensaje despues. Django lo invalida tambien en cuanto se usa.
+PASSWORD_RESET_TIMEOUT = 30 * 60
+
+if not DEBUG and not EMAIL_HOST:
+    raise ImproperlyConfigured(
+        'Falta EMAIL_HOST. Sin servidor de correo nadie puede recuperar su '
+        'contrasena, y la pantalla prometeria un mensaje que no se envia.'
+    )

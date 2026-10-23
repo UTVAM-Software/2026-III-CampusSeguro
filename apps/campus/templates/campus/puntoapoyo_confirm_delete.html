@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>¿Eliminar {{ object }}?</h1>
+
+{% comment %}
+Casi siempre lo que se quiere es apagar `activo`, no borrar: un punto que
+cierra por obras vuelve a abrir, y borrándolo se pierde lo que se sabía de él.
+{% endcomment %}
+<p class="mensaje">
+  Si solo ha cerrado, es mejor <a href="{% url 'punto-update' object.pk %}">editarlo
+  y quitarle la marca de activo</a>: así deja de enseñarse pero no se pierde.
+</p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Sí, eliminar</button>
+</form>
+<a class="boton secundario" href="{% url 'punto-list' %}">Cancelar</a>
+{% endblock %}

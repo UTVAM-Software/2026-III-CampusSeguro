@@ -1,0 +1,27 @@
+{% extends 'usuarios/_marco_acceso.html' %}
+
+{% comment %}
+"Si existe una cuenta con ese correo" no es un descuido de redacción.
+
+Si la pantalla dijera "te mandamos el enlace" solo cuando la cuenta existe,
+cualquiera podría usarla para averiguar qué correos están registrados aquí.
+Dice lo mismo pase lo que pase.
+{% endcomment %}
+
+{% block titulo %}Revisa tu correo{% endblock %}
+
+{% block contenido %}
+<div class="clave">
+  <h1 class="clave__titulo">Revisa tu correo</h1>
+  <p class="clave__ayuda">
+    Si existe una cuenta con ese correo, le acabamos de mandar un enlace para
+    poner una contraseña nueva. Vale 30 minutos.
+  </p>
+  <p class="clave__ayuda">
+    Si no te llega, mira en la carpeta de no deseados antes de volver a
+    pedirlo.
+  </p>
+
+  <p class="clave__pie"><a href="{% url 'entrar' %}">Volver a iniciar sesión</a></p>
+</div>
+{% endblock %}

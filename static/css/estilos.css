@@ -1,0 +1,1819 @@
+:root {
+  --azul: #0b3b61;
+  --azul-vivo: #1976d2;
+  --azul-vivo-oscuro: #1560b0;
+  --azul-claro: #eaf3fc;
+  --blanco: #ffffff;
+  --texto: #14283c;
+  --gris: #5b6b7b;
+  --borde: #d6e2ee;
+  /* El fondo de la zona de contenido. Gris muy claro para que las tarjetas
+     blancas se despeguen: con todo blanco, una tarjeta es un borde fino y
+     nada mas. */
+  --fondo: #f6f8fb;
+  --rojo: #b42318;
+  --rojo-claro: #fdecea;
+  --verde: #0f7a4f;
+  --verde-claro: #e6f6ef;
+  --ambar: #8a6110;
+  --ambar-claro: #fdf3e0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Plus Jakarta Sans", "Segoe UI", Arial, sans-serif;
+  background: var(--blanco);
+  color: var(--texto);
+  line-height: 1.5;
+  display: flex;            /* nuevo */
+  flex-direction: column;   /* nuevo */
+  min-height: 100vh;        /* nuevo */
+}
+
+/* ---------- Contenido ---------- */
+/*
+  La columna de contenido. 54rem y no 1100px: a lo ancho de un monitor, una
+  linea de texto de 1100 px obliga a mover la cabeza para leerla, y las
+  tarjetas se estiran tanto que el titulo y su insignia quedan a un palmo.
+*/
+main { max-width: 54rem; width: 100%; flex: 1; margin: 1.5rem auto; padding: 0 1.5rem; }
+h1, h2 { color: var(--azul); }
+h1 { margin-top: 0; font-size: 2rem; }
+a { color: var(--azul-vivo); }
+
+/* ---------- Botones ---------- */
+/*
+  POR QUE NINGUNA DE ESTAS REGLAS DICE `main`
+    Antes decian: `main > a` pintaba como boton CUALQUIER enlace suelto, y
+    `main > h1 + a` pintaba de azul el que viniera justo detras del titulo.
+    Funcionaba hasta que alguien metia un parrafo entre medias, o ponia un
+    enlace que no queria ser un boton.
+
+    Costo cinco averias encontrarlo -la ultima ensancho la pagina entera-,
+    asi que ahora cada cosa lleva su clase escrita: `.boton` para el
+    principal, `.boton.secundario` para el de contorno. Lo que se ve sale de
+    lo que dice el HTML, no de donde este colocado.
+*/
+.boton, button {
+  display: inline-block;
+  padding: 0.65rem 1.4rem;
+  border: 2px solid var(--azul-vivo);
+  border-radius: 10px;
+  background: var(--blanco);
+  color: var(--azul-vivo);
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.boton:hover, button:hover { background: var(--azul-vivo); color: var(--blanco); }
+
+/* Principal (azul relleno) */
+.boton, button[type="submit"] { background: var(--azul-vivo); color: var(--blanco); }
+.boton:hover, button[type="submit"]:hover {
+  background: var(--azul-vivo-oscuro);
+  border-color: var(--azul-vivo-oscuro);
+}
+
+/* Secundario (píldora de contorno) */
+.boton.secundario {
+  background: var(--blanco);
+  color: var(--azul);
+  border-color: var(--azul);
+  border-radius: 999px;
+}
+.boton.secundario:hover { background: var(--azul); color: var(--blanco); }
+
+/* ---------- Filas: las listas de gestion ---------- */
+/*
+  Campus, cuentas, confirmaciones, acompanantes y ubicaciones. Son listas
+  para administrar: la fila con su nombre y sus dos botones es lo comodo.
+
+  Las de contenido -reportes, viajes, puntos de apoyo- usan `.ficha`, donde
+  la fila entera es el enlace al detalle.
+
+  ANTES ESTO ERA `main ul` Y `main li`, Y MORDIO CUATRO VECES
+    Convertia en tarjeta CUALQUIER <li> de la aplicacion: las vinetas de una
+    invitacion salian como recuadros blancos, los iconos se apilaban encima
+    del texto por un `flex-wrap`, y cada lista nueva habia que acordarse de
+    deshacerlo. Ahora hay que pedirlo con `class="filas"`.
+*/
+.filas { list-style: none; margin: 1.5rem 0; padding: 0; }
+.filas > li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.1rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: var(--blanco);
+  box-shadow: 0 2px 8px rgba(11, 59, 97, 0.06);
+}
+.filas > li > a:first-child {
+  flex: 1; font-weight: 600; color: var(--azul); text-decoration: none;
+}
+
+/* "Editar" y "Eliminar" como botoncitos.
+
+   Se marcan con la clase `accion` y no por su posicion en la fila: cuando
+   eran `a + a` bastaba con meter una insignia entre medias para que dejaran
+   de ser el segundo enlace y se quedaran sin estilo. */
+.accion {
+  font-size: 0.85rem;
+  padding: 0.3rem 0.85rem;
+  border: 1px solid var(--azul-vivo);
+  border-radius: 999px;
+  background: var(--blanco);
+  color: var(--azul-vivo);
+  text-decoration: none;
+}
+.accion:hover { background: var(--azul-vivo); color: var(--blanco); }
+.accion.quitar { border-color: var(--rojo); color: var(--rojo); }
+.accion.quitar:hover { background: var(--rojo); color: var(--blanco); }
+
+/* ---------- Formularios ---------- */
+form { margin: 1.5rem 0 1rem; }
+form p { display: flex; flex-direction: column; gap: 0.25rem; margin: 0 0 1rem; }
+label { font-weight: 600; color: var(--azul); }
+input, select, textarea {
+  width: 100%;
+  max-width: 480px;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--borde);
+  border-radius: 10px;
+  font: inherit;
+}
+input[type="checkbox"] { width: auto; align-self: flex-start; }
+input:focus, select:focus, textarea:focus { outline: 2px solid var(--azul-vivo); }
+form button { margin-right: 0.5rem; }
+
+/* ---------- Index ---------- */
+.hero { text-align: center; margin-bottom: 2rem; }
+.logo-grande { width: 130px; max-width: 60%; mix-blend-mode: multiply; }
+.intro { color: var(--gris); }
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.5rem;
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  /* Blanca a proposito, y no "el fondo de la pagina": desde que la zona de
+     contenido es gris claro, una tarjeta sin fondo sale gris y deja de
+     parecer una tarjeta. No se notaba cuando todo era blanco. */
+  background: var(--blanco);
+  box-shadow: 0 6px 20px rgba(11, 59, 97, 0.08);
+}
+.tarjeta h2 { margin: 0 0 0.25rem; }
+
+/* ---------- Pie de página ---------- */
+.pie {
+  width: calc(100% - 3rem);
+  max-width: 54rem;
+  margin: 1rem auto 1.5rem;
+  padding: 0.9rem 1.2rem;
+  background: var(--azul-claro);
+  border-left: 4px solid var(--azul-vivo);
+  border-radius: 4px;
+  color: var(--azul);
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+/* ---------- Botón volver al menú ---------- */
+.volver {
+  margin-bottom: 1rem;
+  padding: 0.4rem 1rem;
+  font-size: 0.9rem;
+  border-radius: 999px;
+}
+
+/* Botón rojo para negar */
+button.negar { background: var(--blanco); color: var(--rojo); border-color: var(--rojo); }
+button.negar:hover { background: var(--rojo); color: var(--blanco); }
+
+/* Mensajes */
+.mensaje { padding: 0.7rem 1rem; border-radius: 10px; background: var(--azul-claro); color: var(--azul); }
+.mensaje.error { background: #fdecea; color: var(--rojo); }
+
+/* Botones de ubicación */
+.ubicacion, .buscador { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.ubicacion .boton { padding: 0.4rem 1rem; font-size: 0.9rem; }
+.buscador input { flex: 1; }
+.buscador[hidden] { display: none; }
+
+/* Tablas */
+.tabla { width: 100%; border-collapse: collapse; margin: 1rem 0 2rem; }
+.tabla th, .tabla td { padding: 0.6rem 0.8rem; border-bottom: 1px solid var(--borde); text-align: left; }
+.tabla th { background: var(--azul-claro); color: var(--azul); }
+.tabla .boton { padding: 0.3rem 0.9rem; font-size: 0.85rem; }
+
+/* ---------- Iconos de la marca ---------- */
+/*
+  Los 26 iconos los dibujó Lady. Del PNG solo se usa la silueta: el color lo
+  pone `currentColor`, o sea el texto que lo rodea. Por eso el mismo archivo
+  vale azul en una tarjeta, gris en un texto apagado y blanco sobre fondo
+  oscuro, sin guardar tres copias de cada uno.
+
+  Se pintan con el include templates/_icono.html.
+*/
+.icono {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  vertical-align: -0.32em;
+  background-color: currentColor;
+  -webkit-mask: var(--icono) center / contain no-repeat;
+  mask: var(--icono) center / contain no-repeat;
+}
+
+/*
+  Donde `mask` no exista, la regla de arriba pintaría un cuadrado de color
+  macizo. Aquí se cae en usar la imagen tal cual: pierde el color del texto,
+  pero se ve el icono. Por eso el PNG está guardado en azul y no en un color
+  cualquiera.
+*/
+@supports not ((-webkit-mask-image: url("#")) or (mask-image: url("#"))) {
+  .icono {
+    background-color: transparent;
+    background-image: var(--icono);
+    background-position: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+  }
+}
+
+.icono.chico { width: 1.15rem; height: 1.15rem; vertical-align: -0.2em; }
+.icono.grande { width: 2.25rem; height: 2.25rem; vertical-align: -0.45em; }
+
+/* ---------- Pantallas de error ---------- */
+/*
+  Azul marino de la marca, de pared a pared. Un error a pantalla completa en el
+  color del proyecto se lee como parte del sistema; el 404 blanco de siempre se
+  lee como que el sitio se cayó.
+
+  El <body> cambia de color aquí y no en base.html porque estas páginas no
+  extienden base.html: se dibujan solas, sin la barra de navegación.
+*/
+.pagina-error { background: var(--azul); }
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  color: var(--blanco);
+}
+
+/*
+  El número grande, en azul vivo sobre el marino. Es decoración: lo que de
+  verdad dice qué pasó es el <h1> de debajo, que es lo que lee un lector de
+  pantalla.
+*/
+.error__codigo {
+  margin: 0;
+  font-size: clamp(5rem, 22vw, 9rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--azul-vivo);
+}
+
+.error__titulo { margin: 0.5rem 0 0; color: var(--blanco); font-size: 1.5rem; }
+.error__texto { margin: 0.75rem 0 2rem; color: #c7d9ea; }
+
+.error__salida {
+  padding: 0.7rem 1.6rem;
+  border: 2px solid var(--blanco);
+  border-radius: 10px;
+  background: var(--blanco);
+  color: var(--azul);
+  font-weight: 600;
+  text-decoration: none;
+}
+.error__salida:hover { background: transparent; color: var(--blanco); }
+
+/* El descargo va también aquí: es de las pocas pantallas que alguien ve sin
+   haber pasado por ninguna otra. */
+.error__descargo {
+  margin: 2.5rem 0 0;
+  font-size: 0.8rem;
+  color: #8fa9c2;
+}
+
+/* ---------- Listas sin registros ---------- */
+/*
+  Antes cada lista acababa en `<li>No hay registros.</li>`, y como los `<li>`
+  se dibujan como tarjetas, el hueco se veia igual que una fila de datos:
+  parecia haber un registro llamado "No hay registros".
+*/
+/*
+  Sin recuadro propio: casi siempre va DENTRO de una tarjeta, y el borde de
+  puntos que tenia antes dejaba dos cajas concentricas, una dentro de otra.
+*/
+.estado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+.estado__titulo { margin: 0; font-weight: 700; color: var(--azul); }
+.estado__texto { margin: 0; max-width: 24rem; color: var(--gris); font-size: 0.95rem; }
+
+/* ---------- Insignias de estado ---------- */
+/*
+  El color nunca va solo: dentro de la pastilla va siempre la palabra del
+  estado. Quien no distingue el verde del rojo la lee igual.
+*/
+.insignia {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--azul-claro);
+  color: var(--azul);
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.insignia.exito  { background: var(--verde-claro); color: var(--verde); }
+.insignia.espera { background: var(--ambar-claro); color: var(--ambar); }
+.insignia.alerta { background: var(--rojo-claro); color: var(--rojo); }
+.insignia.apagada { background: #eef2f6; color: var(--gris); }
+
+/* ---------- Quien esta dentro ---------- */
+.quien { display: flex; align-items: center; gap: 0.75rem; }
+.quien__nombre { color: var(--azul); font-weight: 600; font-size: 0.9rem; white-space: nowrap; }
+.quien .icono { width: 1.15rem; height: 1.15rem; vertical-align: -0.2em; }
+.quien form { margin: 0; }
+.quien button { padding: 0.35rem 0.9rem; font-size: 0.85rem; }
+
+/* ---------- Tarjeta de acceso ---------- */
+/*
+  Iniciar sesión y crear cuenta en la misma tarjeta, con un panel de color que
+  barre de un lado al otro al cambiar de modo.
+
+  TODO EL CAMBIO DE MODO ES CSS
+      Dos radios ocultos delante de la tarjeta; estas reglas miran cuál está
+      marcado. No hay una línea de JavaScript: funciona con el archivo
+      bloqueado, con la conexión caída y con el teclado.
+
+  EL LADO QUE NO SE VE QUEDA FUERA DEL TABULADOR
+      Con `visibility: hidden`, que además de ocultarlo lo saca del recorrido
+      del teclado y de los lectores de pantalla. Con `opacity: 0` a secas, el
+      tabulador se metía en campos invisibles.
+*/
+.pagina-acceso { background: var(--azul-claro); }
+
+/* La pantalla entera es la tarjeta: sin margen alrededor y sin esquinas
+   redondeadas. Ademas la curva del panel se aplana cuanto mas ancha es, asi
+   que a pantalla completa el contenido de la invitacion cabe con holgura. */
+.marco-acceso { display: flex; flex-direction: column; min-height: 100vh; }
+.marco-acceso__marca {
+  display: inline-flex; align-items: center; gap: 0.75rem;
+  color: var(--azul); font-weight: 800; text-decoration: none;
+}
+.marco-acceso__marca img { width: 40px; }
+/*
+  Hay que deshacer el `main` general, que trae max-width: 1100px, margen
+  automatico y relleno lateral. Aqui la tarjeta ocupa la pantalla entera, asi
+  que esos tres dejaban una franja de fondo a los lados y encogian la curva.
+*/
+.marco-acceso > main {
+  flex: 1;
+  display: flex;
+  width: auto;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.acceso { display: flex; width: 100%; flex-direction: column; }
+
+.acceso__tarjeta {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--blanco);
+}
+
+/* El panel es un círculo enorme: solo se ve el trozo que entra en la tarjeta,
+   y su borde es la curva. */
+.acceso__panel {
+  pointer-events: none;
+  position: absolute;
+  top: -10%;
+  z-index: 10;
+  display: none;
+  aspect-ratio: 1;
+  /* Cuanto mayor es el circulo, mas plana queda la curva dentro de la
+     pantalla y mas sitio hay para el texto. A pantalla completa 2000px se
+     quedaban cortos y el boton cruzaba al lado blanco. */
+  width: max(2600px, 180vw);
+  border-radius: 9999px;
+  background: linear-gradient(to bottom right, var(--azul-vivo), #11598f, var(--azul));
+  right: 46%;
+  translate: 0 -50%;
+  transition: right 1.1s ease-in-out, translate 1.1s ease-in-out;
+}
+
+#acceso-registro:checked ~ .acceso__tarjeta .acceso__panel {
+  right: 52%;
+  translate: 100% -50%;
+}
+
+.acceso__lado {
+  padding: 1.5rem;
+  transition: opacity 0.5s;
+  visibility: hidden;
+  opacity: 0;
+}
+
+.acceso__marca {
+  display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  margin-bottom: 0.5rem;
+  color: var(--azul); font-weight: 800;
+}
+.acceso__marca img { width: 34px; }
+
+.acceso__formulario {
+  margin: 0 auto;
+  display: flex;
+  width: 100%;
+  max-width: 24rem;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.acceso__formulario button { width: 100%; margin-top: 0.4rem; }
+.acceso__titulo { margin: 0; text-align: center; font-size: 1.75rem; font-weight: 800; color: var(--texto); }
+.acceso__ayuda { margin: -0.4rem 0 0.4rem; text-align: center; font-size: 0.875rem; color: var(--gris); }
+
+/* Lo que se ve encima del panel. */
+.acceso__invitacion {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 20;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  padding: 0 1.5rem;
+  text-align: center;
+  color: var(--blanco);
+  transition: opacity 0.5s;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.acceso__invitacion--registro { left: 0; width: 34%; }
+.acceso__invitacion--entrar { right: 0; width: 34%; }
+.acceso__invitacion-titulo { margin: 0; font-size: 1.25rem; font-weight: 800; }
+.acceso__invitacion-texto { margin: 0; max-width: 16rem; font-size: 0.875rem; color: rgba(255, 255, 255, 0.9); }
+
+.acceso__puntos {
+  margin: 0; padding: 0; list-style: none;
+  display: flex; flex-direction: column; gap: 0.7rem;
+  /* Estrecho a proposito: el panel es un circulo, asi que arriba y abajo la
+     zona azul se encoge. Un texto mas ancho se saldria por la curva. */
+  max-width: 13rem; text-align: left; font-size: 0.74rem; line-height: 1.3;
+}
+/*
+  Hereda de `.filas` nada: es su propia lista. Antes habia que deshacer el
+  estilo de `main li`, que dibujaba TODO <li> dentro de
+  <main> como una tarjeta de registro -con su recuadro blanco, su borde y su
+  sombra-. Aqui eso tapaba los tres puntos: texto blanco sobre caja blanca.
+*/
+.acceso__puntos li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  /* Sin `flex-wrap`, que con el el icono se iba a su propia
+     linea encima del texto, estirando la lista hasta empujar el boton fuera
+     de la tarjeta. */
+  flex-wrap: nowrap;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.acceso__puntos .icono { width: 1.25rem; height: 1.25rem; margin-top: 0.1rem; }
+
+.acceso__boton {
+  pointer-events: auto;
+  display: inline-flex;
+  min-height: 2.75rem;
+  cursor: pointer;
+  align-items: center;
+  border: 2px solid var(--blanco);
+  border-radius: 999px;
+  /* Es un <label> y heredaba el azul de `label`: azul sobre el panel azul,
+     casi invisible. Blanco, como su borde. */
+  color: var(--blanco);
+  padding: 0 1.1rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  transition: background-color 0.2s, color 0.2s;
+}
+.acceso__boton:hover { background: var(--blanco); color: var(--azul); }
+
+/* El radio marcado decide qué lado se ve. */
+#acceso-entrar:checked ~ .acceso__tarjeta .acceso__lado--entrar,
+#acceso-registro:checked ~ .acceso__tarjeta .acceso__lado--registro,
+#acceso-entrar:checked ~ .acceso__tarjeta .acceso__invitacion--registro,
+#acceso-registro:checked ~ .acceso__tarjeta .acceso__invitacion--entrar {
+  visibility: visible;
+  opacity: 1;
+  transition-delay: 0.45s;
+}
+
+/* Pestañas del móvil. */
+.acceso__pestanas {
+  display: flex; gap: 0.25rem;
+  border-bottom: 1px solid var(--borde);
+  background: var(--azul-claro);
+  padding: 0.25rem;
+}
+.acceso__pestana {
+  display: flex; flex: 1; min-height: 2.75rem;
+  cursor: pointer; align-items: center; justify-content: center;
+  border-radius: 10px;
+  font-size: 0.875rem; font-weight: 700; color: var(--gris);
+  transition: background-color 0.2s, color 0.2s;
+}
+#acceso-entrar:checked ~ .acceso__tarjeta [for="acceso-entrar"],
+#acceso-registro:checked ~ .acceso__tarjeta [for="acceso-registro"] {
+  background: var(--blanco);
+  color: var(--azul);
+  box-shadow: 0 2px 8px rgba(11, 59, 97, 0.1);
+}
+
+/* El foco del teclado tiene que verse: es lo que se está usando. */
+#acceso-entrar:focus-visible ~ .acceso__tarjeta [for="acceso-entrar"],
+#acceso-registro:focus-visible ~ .acceso__tarjeta [for="acceso-registro"] {
+  outline: 2px solid var(--azul-vivo);
+  outline-offset: 2px;
+}
+.acceso__modo:focus-visible + .acceso__modo + .acceso__tarjeta .acceso__boton,
+.acceso__boton:focus-visible {
+  outline: 3px solid var(--blanco);
+  outline-offset: 2px;
+}
+
+.acceso__descargo {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--gris);
+}
+
+/* En escritorio cada lado ocupa su mitad, superpuestos en la misma celda.
+
+   El corte esta en 56rem y no en 48rem: entre 768 y 896 px los dos lados
+   caben, pero la curva del panel se come el boton de la invitacion. Ahi es
+   mejor el diseno de pestanas, que no depende de la curva. */
+@media (width >= 56rem) {
+  .acceso__panel, .acceso__invitacion { display: flex; }
+  .acceso__pestanas { display: none; }
+  .acceso__tarjeta { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+  .acceso__lado {
+    grid-column: 1; grid-row: 1;
+    display: flex; align-items: center; justify-content: center;
+    padding: 2.5rem;
+  }
+  .acceso__lado--entrar { grid-column: 2; }
+}
+
+/* Por debajo de 56rem no cabe el panel lateral: el cambio son dos pestañas. */
+@media (width < 56rem) {
+  #acceso-entrar:checked ~ .acceso__tarjeta .acceso__lado--registro,
+  #acceso-registro:checked ~ .acceso__tarjeta .acceso__lado--entrar { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acceso__panel, .acceso__lado, .acceso__invitacion { transition: none; }
+}
+
+/* ---------- Un campo de formulario ---------- */
+.campo { display: flex; flex-direction: column; gap: 0.25rem; }
+.campo label { font-weight: 600; color: var(--azul); font-size: 0.9rem; }
+.campo input, .campo select { max-width: none; }
+.campo__ayuda { color: var(--gris); font-size: 0.78rem; }
+.campo__error { margin: 0.1rem 0 0; color: var(--rojo); font-size: 0.82rem; }
+
+/* Solo para lectores de pantalla. */
+/*
+  Escondido para la vista, presente para el lector de pantalla.
+
+  VA CON !important, Y HACE FALTA
+    Esto no es un estilo, es una afirmacion: este elemento NO se ve. Si otra
+    regla lo pisa, el elemento aparece, y aqui dentro hay campos que tienen
+    que seguir existiendo sin verse -el <select> que esta detras del cajon,
+    el campo de archivo que esta detras del area de la foto-.
+
+    Paso: `.formulario select { width: 100% }` es mas especifico que
+    `.sr-only`, asi que el <select> escondido media 1085 px. No se veia
+    -`clip` lo recorta- pero ocupaba, y la pagina entera se podia arrastrar
+    de lado dejando una franja blanca a la derecha.
+*/
+.sr-only {
+  position: absolute !important;
+  width: 1px !important; height: 1px !important;
+  padding: 0 !important; margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* ---------- La foto de un reporte ---------- */
+/*
+  Con un alto maximo y `object-fit: contain`: una foto de telefono en vertical
+  mide 3000 pixeles de alto y empujaria el resto de la pagina fuera de la
+  pantalla.
+*/
+.foto-reporte {
+  display: block;
+  width: 100%;
+  max-width: 480px;
+  max-height: 22rem;
+  margin: 1rem 0;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  object-fit: contain;
+  background: var(--azul-claro);
+}
+
+/* ---------- Armazón: lateral y pestañas ---------- */
+/*
+  Las mismas areas en los dos tamanos: una barra de pestanas abajo en el
+  telefono -donde llega el pulgar- y una lateral azul marino en escritorio.
+  Las dos salen de la misma lista en config/navegacion.py.
+*/
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+.app__contenido { display: flex; flex-direction: column; flex: 1; min-width: 0; background: var(--fondo); }
+
+/* El hueco que deja la barra de pestanas, para que no tape el final. */
+.app__contenido > main { padding-bottom: 5.5rem; }
+
+/*
+  Por omision va en claro, para que sirva sobre fondo blanco -que es donde
+  esta casi siempre: el perfil, la lista de cuentas, una ficha-. El unico
+  sitio oscuro es la lateral, y ahi se repinta abajo.
+
+  Estuvo al reves, y la primera vez que el avatar salio fuera de la lateral
+  era una letra blanca sobre blanco: invisible.
+*/
+.avatar {
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  width: 3rem; height: 3rem;
+  border-radius: 999px;
+  background: var(--azul-claro);
+  color: var(--azul);
+  font-weight: 700; font-size: 1.1rem;
+}
+
+.lateral__cuenta .avatar {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--blanco);
+}
+.avatar--chico {
+  width: 2rem; height: 2rem; font-size: 0.85rem;
+  background: var(--azul-claro); color: var(--azul);
+}
+
+/* ---- Cabecera del telefono ---- */
+.cabecera-movil {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--borde);
+}
+.cabecera-movil__cuenta {
+  display: flex; align-items: center; gap: 0.6rem;
+  color: var(--azul); font-weight: 700; text-decoration: none;
+}
+.cabecera-movil form { margin: 0; }
+.cabecera-movil button { padding: 0.35rem 0.9rem; font-size: 0.85rem; }
+
+/* ---- Pestanas del telefono ---- */
+.pestanas {
+  position: fixed; inset: auto 0 0 0; z-index: 40;
+  display: flex;
+  border-top: 1px solid var(--borde);
+  background: var(--blanco);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.pestanas__enlace {
+  display: flex; flex: 1; min-height: 3.5rem;
+  flex-direction: column; align-items: center; justify-content: center; gap: 0.15rem;
+  font-size: 0.6875rem; font-weight: 600;
+  color: var(--gris); text-decoration: none;
+}
+.pestanas__enlace[aria-current="page"] { color: var(--azul-vivo); }
+.pestanas__icono { display: flex; }
+.pestanas__icono .icono { width: 1.4rem; height: 1.4rem; vertical-align: 0; }
+
+/* La destacada es un boton redondo: reportar algo tiene que estar a un toque. */
+.pestanas__enlace--destacado .pestanas__icono {
+  width: 2.25rem; height: 2.25rem;
+  align-items: center; justify-content: center;
+  border-radius: 999px;
+  background: var(--azul-vivo);
+  color: var(--blanco);
+}
+
+/* ---- Lateral de escritorio ---- */
+/*
+  El texto va en blanco al 80%: sobre el azul marino da de sobra para leerse.
+  Al 60%, que es lo que se ve por ahi -casi siempre sobre negro-, aqui se
+  quedaria corto.
+*/
+.lateral { display: none; }
+
+.lateral__cuenta {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.25rem;
+  border-radius: 12px;
+  color: inherit; text-decoration: none;
+  min-width: 0;
+}
+.lateral__cuenta:hover { background: rgba(255, 255, 255, 0.08); }
+.lateral__cuenta-texto { min-width: 0; }
+.lateral__nombre {
+  display: block; font-size: 1.05rem; font-weight: 700; color: var(--blanco);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.lateral__campus {
+  display: block; font-size: 0.8125rem; color: rgba(255, 255, 255, 0.6);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.lateral__raya { margin: 1.25rem 0; border: 0; border-top: 1px solid rgba(255, 255, 255, 0.12); }
+.lateral__nav { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+.lateral__salir { margin: 1.5rem 0 0; }
+
+.lateral__enlace {
+  position: relative;
+  display: flex; align-items: center; gap: 0.85rem;
+  min-height: 3.25rem;
+  width: 100%;
+  padding: 0 0.75rem;
+  border: 0; border-radius: 10px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+  font: inherit; font-size: 0.9375rem; font-weight: 600;
+  text-align: left; text-decoration: none; cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.lateral__enlace:hover { background: rgba(255, 255, 255, 0.1); color: var(--blanco); }
+.lateral__enlace[aria-current="page"] { background: rgba(255, 255, 255, 0.15); color: var(--blanco); }
+
+/*
+  La seccion en la que estas lleva ademas una barra a la izquierda: un fondo un
+  poco mas claro es poca diferencia, y quien no distingue bien los colores se
+  quedaba sin saber donde esta.
+*/
+.lateral__enlace[aria-current="page"]::before {
+  content: "";
+  position: absolute; left: 0; top: 0.6rem; bottom: 0.6rem;
+  width: 3px; border-radius: 999px; background: var(--blanco);
+}
+.lateral__hueco { display: block; width: 1.5rem; flex-shrink: 0; }
+
+@media (width >= 48rem) {
+  .app { flex-direction: row; }
+  .pestanas, .cabecera-movil { display: none; }
+  .app__contenido > main { padding-bottom: 2rem; }
+
+  .lateral {
+    position: sticky; top: 0;
+    display: flex; flex-direction: column;
+    width: 272px; flex-shrink: 0;
+    height: 100vh; overflow-y: auto;
+    padding: 1.5rem 1rem;
+    background: var(--azul);
+
+    /*
+      EL z-index NO ES DECORATIVO, Y COSTO ENCONTRARLO
+        `position: sticky` crea un contexto de apilamiento SIEMPRE, lleve
+        z-index o no. Eso encerraba aqui dentro al panel de la campana: su
+        `z-index: 50` solo valia frente a sus hermanos de la lateral, y el
+        contenido de la derecha -que va despues en el HTML- se pintaba
+        encima.
+
+        No se notaba casi: el panel es blanco y las tarjetas tambien, asi que
+        lo unico que asomaba por encima eran los iconos de colores. Parecia
+        suciedad del navegador.
+
+        Con esto la lateral entera sube, y el panel sube con ella.
+    */
+    z-index: 60;
+  }
+}
+
+/* ---------- El inicio ---------- */
+.saludo { margin-bottom: 0.5rem; }
+.saludo__hola { margin: 0; color: var(--gris); font-size: 0.9rem; }
+.saludo__nombre { margin: 0; font-size: 1.6rem; }
+.saludo__campus { margin: 0.1rem 0 0; color: var(--gris); font-size: 0.85rem; }
+
+/*
+  La tarjeta destacada: la accion del producto, en el azul de la marca. Es lo
+  primero que se ve al abrir, y por eso es la unica de la pantalla que va en
+  color.
+*/
+.tarjeta.destacada {
+  background: var(--azul);
+  border-color: transparent;
+  color: var(--blanco);
+}
+.tarjeta.destacada h2 { margin: 0; color: var(--blanco); }
+.destacada__texto { margin: 0.25rem 0 0; color: rgba(255, 255, 255, 0.85); font-size: 0.9rem; }
+.destacada__botones { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.3rem; }
+
+.destacada__principal {
+  background: var(--blanco); color: var(--azul); border-color: var(--blanco);
+}
+.destacada__principal:hover { background: var(--azul-claro); color: var(--azul); }
+.destacada__secundario {
+  background: transparent; color: var(--blanco);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.destacada__secundario:hover { background: var(--blanco); color: var(--azul); }
+
+/* Los accesos sueltos: alineados a la izquierda, como una lista de puertas. */
+.accesos { display: flex; flex-direction: column; gap: 0.6rem; margin: 1.5rem 0; }
+.accesos .boton { justify-content: flex-start; display: flex; align-items: center; gap: 0.6rem; }
+.accesos--menu { flex-direction: row; flex-wrap: wrap; }
+.accesos--menu .boton { flex: 1 1 8rem; justify-content: center; }
+
+/*
+  Uno debajo de otro, a lo ancho, tambien en escritorio. En fila los dos
+  quedan a la mitad y "Planificar viaje" -que es LA accion del producto- pesa
+  lo mismo que la de al lado.
+*/
+.destacada__botones .boton { width: 100%; justify-content: center; min-height: 3rem; }
+
+/* ---------- Ficha: una fila de lista que lleva a su detalle ---------- */
+/*
+  Sustituye a la fila con "Editar" y "Eliminar" al lado. La fila ENTERA es el
+  enlace al detalle, y desde alli se edita o se borra: en una lista, tres
+  enlaces por fila hacen que el dedo acierte el que no era.
+*/
+.ficha {
+  display: block;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: var(--blanco);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(11, 59, 97, 0.06);
+}
+.ficha:hover { background: var(--azul-claro); }
+
+.ficha__cabecera {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.5rem; margin-bottom: 0.25rem;
+}
+.ficha__titulo {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.9375rem; font-weight: 700; color: var(--azul);
+}
+.ficha__titulo .icono { width: 1.25rem; height: 1.25rem; color: var(--azul-vivo); }
+
+/* Dos lineas y corta: una descripcion larga empujaria el resto de la lista
+   fuera de la pantalla. El texto entero esta en el detalle. */
+.ficha__texto {
+  margin: 0;
+  color: var(--gris); font-size: 0.875rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ficha__meta { margin: 0.4rem 0 0; color: var(--gris); font-size: 0.75rem; }
+
+/* Las fichas van en una lista propia. Los `li` no llevan nada: la tarjeta
+   es el <a> de dentro, para que la fila entera sea el enlace. */
+.fichas { list-style: none; margin: 1.25rem 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.fichas > li {
+  display: block; margin: 0; padding: 0;
+  border: 0; border-radius: 0; background: transparent; box-shadow: none;
+}
+
+/* Las acciones de un detalle: editar y eliminar, juntas y al final. */
+.acciones { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 1.5rem 0 1rem; }
+.acciones .quitar { border-color: var(--rojo); color: var(--rojo); }
+.acciones .quitar:hover { background: var(--rojo); color: var(--blanco); }
+
+/* ======================================================================== */
+/* El detalle de un registro                                                */
+/* ======================================================================== */
+/*
+  Las pantallas de detalle eran una lista de parrafos "Campo: valor" seguidos.
+  Eso esta bien para depurar y mal para usar: lo importante -que ese viaje
+  sigue en curso, que ese reporte ya lo confirmaron cuatro personas- quedaba
+  al mismo tamano que el numero de identificacion.
+
+  Ahora cada detalle tiene la misma forma: una cabecera con el titulo grande y
+  su insignia, el estado en el que esta, y debajo tarjetas con lo que se puede
+  hacer o consultar.
+*/
+
+/* El enlace de volver, arriba y en texto llano. No lleva `.boton` porque
+   volver no es la accion de la pantalla. */
+a.atras {
+  display: inline-block;
+  margin: 0 0 1rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--azul-vivo);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+a.atras:hover { background: none; color: var(--azul); text-decoration: underline; }
+
+.cabecera { margin-bottom: 1.25rem; }
+.cabecera__linea {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 0.75rem;
+}
+.cabecera h1 {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin: 0; font-size: 1.75rem;
+}
+.cabecera h1 .icono { width: 2rem; height: 2rem; color: var(--azul-vivo); flex-shrink: 0; }
+.cabecera__meta { margin: 0.4rem 0 0; color: var(--gris); font-size: 0.875rem; }
+
+/* ---------- Aviso: una caja que explica en que punto estas ---------- */
+/*
+  No es un mensaje de `messages` -aquello pasa y desaparece-. Esto describe la
+  situacion del registro que estas mirando, y sigue ahi mientras lo este.
+*/
+.aviso {
+  display: flex; gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: var(--azul-claro);
+  color: var(--azul);
+  font-size: 0.9375rem;
+}
+.aviso p { margin: 0; }
+.aviso__icono { flex-shrink: 0; font-size: 1.1rem; line-height: 1.4; }
+.aviso__titulo { font-weight: 700; }
+.aviso.exito    { background: var(--verde-claro); border-color: #bfe5d4; color: var(--verde); }
+.aviso.atencion { background: var(--ambar-claro); border-color: #f0dcb4; color: var(--ambar); }
+.aviso.alerta   { background: var(--rojo-claro);  border-color: #f3c9c4; color: var(--rojo); }
+
+/* ---------- Un numero grande con su etiqueta debajo ---------- */
+.datos { display: flex; flex-wrap: wrap; gap: 1.5rem 2.5rem; }
+.dato__valor { margin: 0; font-size: 1.75rem; font-weight: 800; line-height: 1; color: var(--azul); }
+.dato__etiqueta { margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--gris); }
+.dato.apagado .dato__valor { color: var(--gris); }
+
+/* ---------- Botones a lo ancho ---------- */
+/*
+  En el telefono el boton principal de una pantalla ocupa el ancho entero: es
+  el objetivo mas facil de acertar con el pulgar.
+*/
+.boton.bloque, button.bloque { width: 100%; justify-content: center; min-height: 3rem; font-size: 1rem; }
+.boton.exito, button.exito {
+  background: var(--verde); border-color: var(--verde); color: var(--blanco);
+}
+.boton.exito:hover, button.exito:hover { background: #0c6440; border-color: #0c6440; color: var(--blanco); }
+form.suelto { margin: 0.5rem 0; }
+
+/* ---------- La ficha de datos de toda la vida ---------- */
+/*
+  Lo que antes eran parrafos "Campo: valor". En dos columnas la etiqueta queda
+  apagada y el valor destaca, que es el que se viene a leer.
+*/
+.datos-lista {
+  display: grid; grid-template-columns: auto 1fr; gap: 0.5rem 1.25rem;
+  margin: 0; font-size: 0.9375rem;
+}
+.datos-lista dt { color: var(--gris); }
+.datos-lista dd { margin: 0; font-weight: 600; color: var(--texto); }
+
+/* ---------- Una lista dentro de una tarjeta ---------- */
+/* Una lista llana: sin recuadro ni sombra, que la tarjeta ya la envuelve. */
+.lista-llana { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.6rem; }
+.lista-llana > li {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;
+  margin: 0; padding: 0; border: 0; border-radius: 0;
+  background: transparent; box-shadow: none; flex-wrap: nowrap;
+}
+
+/* ---------- El descargo ---------- */
+/*
+  La letra pequena del final. Campus Seguro no detecta peligro: lo que hay es
+  lo que la comunidad reporta, y eso hay que decirlo donde se toman las
+  decisiones, no solo en el pie.
+*/
+.descargo { margin: 1.5rem 0 0; color: var(--gris); font-size: 0.8125rem; }
+
+.tarjeta + .tarjeta, .tarjeta + .aviso, .aviso + .tarjeta { margin-top: 1rem; }
+.tarjeta__titulo { margin: 0 0 0.75rem; font-size: 1.05rem; }
+
+/* ---------- Dos variantes de ficha ---------- */
+/*
+  Sin leer: una marca azul a la izquierda, ADEMAS de la insignia que lo dice
+  con palabras. El color solo no vale: quien no lo distingue necesita leerlo.
+*/
+.ficha--nueva { border-left: 4px solid var(--azul-vivo); }
+
+/* Caducada: se queda en la lista porque es el historico, pero apagada. */
+.ficha--apagada { background: #f7f9fb; }
+.ficha--apagada .ficha__titulo { color: var(--gris); }
+.dato__valor--chico { font-size: 1.1rem; font-weight: 700; }
+
+/* `espera` es el nombre de tono que usan las insignias; aqui vale lo mismo
+   que `atencion`. Un nivel no puede salir de un color en la lista y de otro
+   en el inicio. */
+.aviso.espera { background: var(--ambar-claro); border-color: #f0dcb4; color: var(--ambar); }
+
+/* El aviso del inicio es un enlace: lleva a su pantalla, y se sigue viendo
+   como un aviso y no como un boton. */
+a.aviso { text-decoration: none; padding: 0.85rem 1rem; border-radius: 14px; }
+a.aviso:hover { filter: brightness(0.97); }
+.aviso__cuerpo { display: block; }
+
+/* ======================================================================== */
+/* El perfil: dos secciones, una al lado de otra                            */
+/* ======================================================================== */
+/*
+  A la izquierda las secciones, a la derecha la abierta. En el telefono las
+  secciones pasan arriba, en fila: una columna de 14rem en una pantalla de
+  375 px se come el ancho del contenido.
+
+  El cambio es CSS puro: dos radios escondidos y reglas que miran cual esta
+  marcado. Los radios van DELANTE en el HTML, que es lo que permite a `~`
+  alcanzar a sus hermanos de despues.
+*/
+.ajustes { display: grid; gap: 1.25rem; grid-template-columns: 1fr; margin-top: 1.5rem; }
+
+@media (width >= 48rem) {
+  .ajustes { grid-template-columns: 14rem 1fr; align-items: start; }
+}
+
+.ajustes__pestanas { display: flex; gap: 0.25rem; overflow-x: auto; }
+
+@media (width >= 48rem) {
+  .ajustes__pestanas { flex-direction: column; overflow: visible; }
+}
+
+.ajustes__pestana {
+  position: relative;
+  display: flex; align-items: center; gap: 0.6rem;
+  min-height: 2.75rem; padding: 0 0.9rem;
+  border-radius: 12px;
+  color: var(--gris); font-size: 0.9375rem; font-weight: 600;
+  white-space: nowrap; cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.ajustes__pestana:hover { background: var(--azul-claro); color: var(--azul); }
+.ajustes__pestana .icono { width: 1.25rem; height: 1.25rem; }
+
+/* La barra que marca la abierta. En el movil, donde van en fila, pasa abajo:
+   una barra lateral entre dos pestanas seguidas no se entiende. */
+.ajustes__pestana::before {
+  content: "";
+  position: absolute; inset: auto 0.75rem 0 0.75rem; height: 3px;
+  border-radius: 999px; background: var(--azul-vivo);
+  opacity: 0; transition: opacity 0.15s;
+}
+
+@media (width >= 48rem) {
+  .ajustes__pestana::before { inset: 0.5rem auto 0.5rem 0; width: 3px; height: auto; }
+}
+
+.ajustes__panel {
+  display: none; flex-direction: column; gap: 1.25rem; min-width: 0;
+  padding: 1.5rem;
+  border: 1px solid var(--borde); border-radius: 20px;
+  background: var(--blanco);
+  box-shadow: 0 6px 20px rgba(11, 59, 97, 0.1);
+}
+
+#ajustes-datos:checked ~ .ajustes__panel[data-panel="datos"],
+#ajustes-seguridad:checked ~ .ajustes__panel[data-panel="seguridad"] { display: flex; }
+
+#ajustes-datos:checked ~ .ajustes__pestanas [for="ajustes-datos"],
+#ajustes-seguridad:checked ~ .ajustes__pestanas [for="ajustes-seguridad"] {
+  background: var(--azul-claro); color: var(--azul);
+}
+#ajustes-datos:checked ~ .ajustes__pestanas [for="ajustes-datos"]::before,
+#ajustes-seguridad:checked ~ .ajustes__pestanas [for="ajustes-seguridad"]::before {
+  opacity: 1;
+}
+
+/* El foco se ve en la pestana, aunque quien lo tenga sea el radio escondido:
+   es la pestana lo que se esta senalando en pantalla. */
+#ajustes-datos:focus-visible ~ .ajustes__pestanas [for="ajustes-datos"],
+#ajustes-seguridad:focus-visible ~ .ajustes__pestanas [for="ajustes-seguridad"] {
+  outline: 3px solid var(--azul-vivo); outline-offset: 2px;
+}
+
+.ajustes__cabecera {
+  display: flex; flex-direction: column; gap: 0.25rem;
+  padding-bottom: 1rem; border-bottom: 1px solid var(--borde);
+}
+.ajustes__cabecera h2 { margin: 0; font-size: 1.125rem; font-weight: 800; }
+.ajustes__cabecera p { margin: 0; color: var(--gris); font-size: 0.875rem; }
+
+.ajustes__bloque {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.75rem;
+  padding-bottom: 1.25rem; border-bottom: 1px solid var(--borde);
+}
+.ajustes__bloque:last-child { padding-bottom: 0; border-bottom: 0; }
+.ajustes__bloque form { margin: 0; }
+.ajustes__titulo { margin: 0; font-size: 1rem; font-weight: 700; color: var(--azul); }
+.ajustes__texto { margin: 0; color: var(--gris); font-size: 0.875rem; }
+.ajustes__texto strong { color: var(--texto); }
+
+.ajustes__rejilla { display: grid; gap: 1rem; }
+@media (width >= 32rem) {
+  .ajustes__rejilla { grid-template-columns: 1fr 1fr; }
+  .ficha-dato--ancho { grid-column: 1 / -1; }
+}
+
+.ficha-dato { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.ficha-dato__etiqueta { color: var(--gris); font-size: 0.8125rem; font-weight: 600; }
+.ficha-dato__valor { color: var(--texto); font-size: 0.9375rem; overflow-wrap: break-word; }
+
+/* ---------- El retrato: la foto y el boton de cambiarla ---------- */
+/*
+  El boton es en realidad un `<label for>` del campo de archivo, que va
+  escondido. Asi abre el dialogo sin una linea de JavaScript y el teclado
+  llega a el: un `<div>` con un click encima no daria ninguna de las dos.
+*/
+.retrato { display: flex; align-items: center; gap: 1rem; }
+
+/* `flex: 1; min-width: 0` para que la ayuda parta por palabras en el hueco
+   que queda. Sin eso el parrafo empuja y el boton acaba debajo de la foto. */
+.retrato__acciones { display: flex; flex-direction: column; gap: 0.3rem; flex: 1; min-width: 0; }
+
+.retrato__elegir {
+  display: inline-flex; align-items: center; width: fit-content;
+  min-height: 2.75rem; padding: 0 1.1rem;
+  border: 1px solid var(--borde); border-radius: 12px;
+  background: var(--blanco); color: var(--azul);
+  font-size: 0.875rem; font-weight: 600; cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.retrato__elegir:hover { border-color: var(--azul-vivo); background: var(--azul-claro); }
+
+/* El foco se ve en la etiqueta, aunque quien lo tenga sea el campo escondido. */
+.campo:has(input:focus-visible) .retrato__elegir {
+  outline: 3px solid var(--azul-vivo); outline-offset: 2px;
+}
+
+.avatar--grande { width: 5rem; height: 5rem; font-size: 1.75rem; }
+.avatar--foto { object-fit: cover; padding: 0; }
+
+/* ---------- La campana y su panel ---------- */
+/*
+  Es un <details>: se abre y se cierra sin JavaScript. El panel va `fixed` y
+  no `absolute` porque la lateral tiene su propio desplazamiento, y dentro de
+  un elemento con desplazamiento un panel absoluto se corta por el borde.
+*/
+.campana { position: relative; flex-shrink: 0; }
+
+.campana__boton {
+  position: relative; list-style: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  width: 2.5rem; height: 2.5rem;
+  border: 1px solid var(--borde); border-radius: 999px;
+  background: var(--blanco); color: var(--azul);
+  transition: background-color 0.15s, color 0.15s;
+}
+.campana__boton:hover { background: var(--azul-claro); }
+.campana__boton .icono { width: 1.25rem; height: 1.25rem; vertical-align: 0; }
+
+/* El triangulito que ponen Safari y Firefox en los <summary>. */
+.campana__boton::-webkit-details-marker { display: none; }
+.campana__boton::marker { content: ""; }
+
+.campana[open] .campana__boton { background: var(--azul-claro); }
+
+/* Sobre el azul de la lateral. Sin esto el icono sale azul oscuro sobre azul
+   oscuro y no se ve. */
+.campana--oscura .campana__boton {
+  border-color: rgba(255, 255, 255, 0.18);
+  background: transparent; color: rgba(255, 255, 255, 0.85);
+}
+.campana--oscura .campana__boton:hover,
+.campana--oscura.campana[open] .campana__boton {
+  background: rgba(255, 255, 255, 0.15); color: var(--blanco);
+}
+
+/* El contador. Va arriba a la derecha, encima del icono. */
+.campana__contador {
+  position: absolute; top: -0.25rem; right: -0.25rem;
+  min-width: 1.15rem; height: 1.15rem; padding: 0 0.25rem;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 999px;
+  background: var(--rojo); color: var(--blanco);
+  font-size: 0.7rem; font-weight: 800; line-height: 1;
+}
+
+/*
+  El velo de atras. Un <details> no tiene `::backdrop` como un <dialog>, asi
+  que se dibuja a mano.
+
+  Atenua Y desenfoca: solo atenuar dejaba el texto legible detras del panel y
+  la vista no sabia donde mirar.
+*/
+.campana__velo {
+  /* 45: por encima de la barra de pestanas del telefono, que es 40. Con el
+     panel abierto se atenua TODO lo de atras; dejar la barra encendida
+     invitaba a pulsarla sin querer. */
+  position: fixed; inset: 0; z-index: 45; display: block;
+  background: rgba(11, 59, 97, 0.25);
+  backdrop-filter: blur(3px);
+}
+
+/* Donde no haya desenfoque, se compensa con algo mas de oscuridad. */
+@supports not (backdrop-filter: blur(3px)) {
+  .campana__velo { background: rgba(11, 59, 97, 0.4); }
+}
+
+/* En el telefono se pega a los dos lados, debajo de la cabecera. En
+   escritorio sale a la derecha de la lateral, que mide 272 px. */
+.campana__panel {
+  position: fixed; z-index: 50;
+  display: flex; flex-direction: column; max-height: 70dvh; overflow: hidden;
+  top: 4.5rem; right: 1rem; left: 1rem;
+  border: 1px solid var(--borde); border-radius: 20px;
+  background: var(--blanco);
+  box-shadow: 0 18px 50px rgba(11, 59, 97, 0.25);
+}
+
+@media (width >= 48rem) {
+  .campana__panel { top: 4.75rem; right: auto; left: calc(272px + 0.5rem); width: 22rem; }
+}
+
+.campana__titulo {
+  margin: 0; padding: 0.85rem 1.1rem;
+  border-bottom: 1px solid var(--borde);
+  font-size: 0.9375rem; font-weight: 700; color: var(--azul);
+}
+
+.campana__lista { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
+.campana__lista > li {
+  display: block; margin: 0; padding: 0;
+  border: 0; border-radius: 0; background: none; box-shadow: none;
+}
+
+.campana__aviso {
+  display: flex; flex-direction: column; gap: 0.15rem;
+  padding: 0.8rem 1.1rem;
+  border-bottom: 1px solid var(--borde);
+  color: inherit; text-decoration: none;
+}
+.campana__aviso:hover { background: var(--fondo); }
+
+/* Sin leer: ademas del fondo, una barra a la izquierda. El color solo no
+   basta para quien no lo distingue. */
+.campana__aviso--sin-leer { border-left: 3px solid var(--azul-vivo); background: #f4f9ff; }
+
+.campana__fila { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.campana__nombre {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 0.875rem; font-weight: 600; color: var(--azul);
+}
+.campana__fecha { flex-shrink: 0; font-size: 0.75rem; color: var(--gris); }
+.campana__mensaje {
+  color: var(--gris); font-size: 0.8125rem;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.campana__vacio { margin: 0; padding: 1.75rem 1.1rem; text-align: center; color: var(--gris); font-size: 0.9rem; }
+
+.campana__pie {
+  display: block; padding: 0.85rem 1.1rem;
+  text-align: center; font-size: 0.9375rem; font-weight: 600;
+  color: var(--azul-vivo); text-decoration: none;
+}
+.campana__pie:hover { background: var(--fondo); }
+
+.lateral__arriba { display: flex; align-items: center; gap: 0.5rem; }
+.lateral__arriba .lateral__cuenta { flex: 1; min-width: 0; }
+.cabecera-movil__acciones { display: flex; align-items: center; gap: 0.6rem; }
+
+button[disabled] { opacity: 0.5; cursor: not-allowed; }
+button[disabled]:hover { background: var(--blanco); color: var(--azul); }
+
+/* ---------- Una seccion del inicio: titulo fuera, contenido debajo ------- */
+.seccion { display: flex; flex-direction: column; gap: 0.9rem; margin: 2rem 0; }
+.seccion > h2 { margin: 0; font-size: 1.25rem; font-weight: 800; }
+.seccion .fichas, .seccion .accesos { margin: 0; }
+.seccion > .boton { align-self: flex-start; }
+
+/*
+  El aro del estado vacio. Los iconos de Lady ya vienen dentro de un circulo
+  dibujado, asi que meterlos en otro deja dos circulos concentricos y se ve
+  como un descuido: el aro solo se pinta cuando no hay icono.
+*/
+.estado__icono {
+  display: flex; align-items: center; justify-content: center;
+  width: 3.5rem; height: 3.5rem;
+  border-radius: 999px;
+  background: var(--azul-claro);
+  opacity: 1;
+}
+.estado__icono:has(.icono) { background: transparent; }
+.estado__icono .icono { width: 2rem; height: 2rem; }
+.estado .boton { margin-top: 0.5rem; }
+
+/* Las fichas dentro de una tarjeta no llevan el margen de arriba. */
+.fichas--dentro { margin: 0; }
+
+/* El campus del saludo: en escritorio ya esta en la lateral, y repetirlo dos
+   veces en la misma pantalla es ruido. */
+@media (width >= 48rem) {
+  .saludo__campus { display: none; }
+}
+
+/* ======================================================================== */
+/* El mapa                                                                  */
+/* ======================================================================== */
+.lienzo {
+  overflow: hidden;
+  margin: 1.25rem 0;
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  background: var(--azul-claro);
+}
+#mapa-lienzo { height: 340px; width: 100%; }
+
+@media (width >= 48rem) {
+  #mapa-lienzo { height: 460px; }
+}
+
+/* El cuadrado verde de un punto de apoyo. Forma distinta a la del circulo de
+   un reporte: quien no distingue bien los colores sigue viendo cual es cual. */
+.pin-punto {
+  display: block; width: 1rem; height: 1rem;
+  border: 2px solid var(--blanco); border-radius: 3px;
+  background: var(--verde);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+/* Leaflet trae su propia hoja; esto solo recoloca lo que choca con la nuestra. */
+.leaflet-container { font-family: inherit; }
+.leaflet-popup-content a { font-weight: 600; }
+.leaflet-popup-content p { margin: 0.4em 0; }
+
+/* ---------- Las pastillas del filtro ---------- */
+/*
+  Son enlaces, no casillas: el filtro vive en la direccion, asi que se puede
+  compartir y el boton de atras lo deshace. Con casillas y JavaScript no
+  funcionaria ninguna de las dos cosas.
+*/
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
+.chips > li { display: block; margin: 0; padding: 0; border: 0; background: none; box-shadow: none; }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  min-height: 2.5rem; padding: 0 0.95rem;
+  border: 1px solid var(--borde); border-radius: 999px;
+  background: var(--blanco); color: var(--texto);
+  font-size: 0.875rem; font-weight: 600; text-decoration: none;
+  white-space: nowrap;
+}
+.chip:hover { border-color: var(--azul-vivo); background: var(--azul-claro); color: var(--azul); }
+.chip .icono { width: 1.1rem; height: 1.1rem; vertical-align: 0; color: var(--gris); }
+
+/* La elegida: fondo claro, borde azul y texto azul. El aria-pressed no es
+   solo para el lector de pantalla, tambien es de donde sale el estilo. */
+.chip[aria-pressed="true"] {
+  border-color: var(--azul-vivo); background: var(--azul-claro); color: var(--azul);
+}
+.chip[aria-pressed="true"] .icono { color: var(--azul-vivo); }
+
+/* El numero entre parentesis del titulo: apagado, que el titulo mande. */
+.cuenta { color: var(--gris); font-size: 0.875rem; font-weight: 400; }
+
+/* El aire entre los bloques del inicio. Las capturas del proyecto viejo
+   respiran bastante mas que esto: cada bloque es una cosa distinta y el hueco
+   es lo que lo dice. */
+.saludo { margin: 0 0 1.5rem; }
+.tarjeta.destacada { padding: 1.75rem; gap: 0.75rem; }
+.destacada__botones { gap: 0.6rem; margin-top: 0.75rem; }
+.app__contenido > main > .tarjeta { margin: 1.5rem 0; }
+.accesos .boton { min-height: 3.25rem; padding-left: 1.25rem; }
+.accesos .boton .icono { width: 1.35rem; height: 1.35rem; }
+
+/*
+  El hueco cuando va SUELTO, fuera de una tarjeta: en las listas se incluye
+  directamente dentro de <main>, y desde que el fondo es gris claro un bloque
+  sin caja se queda flotando. Dentro de una tarjeta no se toca.
+
+  Es el unico sitio donde queda un selector con `main`, y aqui es lo que se
+  quiere decir: "cuando este bloque es hijo directo del contenido".
+*/
+main > .estado {
+  margin: 1.5rem 0;
+  border: 1px solid var(--borde);
+  border-radius: 20px;
+  background: var(--blanco);
+}
+
+/* ======================================================================== */
+/* Formularios: el de reportar, sobre todo                                  */
+/* ======================================================================== */
+.formulario { display: flex; flex-direction: column; gap: 1.25rem; margin: 1.5rem 0 0; }
+.formulario .tarjeta { margin: 0; }
+.formulario .tarjeta .aviso { margin: 0; }
+.formulario .tarjeta .boton { margin: 0; }
+.formulario .campo__ayuda { margin: 0; }
+.campo__etiqueta { font-weight: 600; color: var(--azul); font-size: 0.9rem; }
+
+/* El campo de texto largo: alto suficiente para dos o tres lineas sin tener
+   que estirarlo, que es lo primero que hace quien escribe mas de una frase. */
+.formulario textarea { min-height: 7.5rem; resize: vertical; }
+/* `:not(.sr-only)` a proposito: el <select> escondido detras del cajon y el
+   campo de archivo detras del area de la foto llevan esa clase, y este
+   `width: 100%` los sacaba a 1085 px. No se veian -`clip` los recorta- pero
+   ocupaban, y la pagina entera se podia arrastrar de lado. */
+.formulario input:not(.sr-only),
+.formulario select:not(.sr-only),
+.formulario textarea:not(.sr-only) { max-width: none; width: 100%; }
+
+/* ---------- El area de la foto ---------- */
+/*
+  El borde de puntos es la convencion de "aqui se suelta algo". Es un `div` y
+  el boton va dentro, no al reves: un boton no puede contener otro boton.
+*/
+.adjunto__zona {
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+  padding: 2.5rem 1.5rem;
+  border: 2px dashed var(--borde); border-radius: 20px;
+  background: var(--blanco);
+  text-align: center; cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.adjunto__zona:hover { border-color: var(--azul-vivo); background: var(--azul-claro); }
+.adjunto__zona--encima { border-color: var(--azul-vivo); background: var(--azul-claro); }
+.adjunto__icono { width: 2.5rem; height: 2.5rem; color: var(--azul-vivo); }
+.adjunto__titulo { margin: 0; font-weight: 700; color: var(--azul); }
+.adjunto__limites { margin: 0; color: var(--gris); font-size: 0.875rem; }
+
+.adjunto__elegir {
+  margin-top: 0.5rem;
+  background: var(--blanco); color: var(--azul); border: 1px solid var(--borde);
+}
+.adjunto__elegir:hover { background: var(--azul-claro); color: var(--azul); border-color: var(--azul-vivo); }
+
+/* La foto elegida, con su nombre y su peso. */
+.adjunto {
+  margin: 0;
+  border: 1px solid var(--borde); border-radius: 20px;
+  background: var(--blanco); overflow: hidden;
+}
+.adjunto__vista { display: block; width: 100%; max-height: 18rem; object-fit: contain; background: var(--azul-claro); }
+.adjunto__pie {
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 0.75rem; padding: 0.9rem 1.1rem;
+}
+.adjunto__datos { display: flex; flex-direction: column; min-width: 0; }
+.adjunto__nombre { font-weight: 600; color: var(--azul); font-size: 0.9rem; overflow-wrap: anywhere; }
+.adjunto__meta { color: var(--gris); font-size: 0.8125rem; }
+.adjunto__acciones { display: flex; gap: 0.5rem; }
+.adjunto__accion {
+  padding: 0.35rem 0.9rem; font-size: 0.85rem;
+  background: var(--blanco); color: var(--azul); border: 1px solid var(--borde);
+}
+.adjunto__accion:hover { background: var(--azul-claro); color: var(--azul); }
+.adjunto__accion.quitar { border-color: var(--rojo); color: var(--rojo); }
+.adjunto__accion.quitar:hover { background: var(--rojo); color: var(--blanco); }
+
+/* ---------- La invitacion a acompanar ---------- */
+.invitacion__quien { margin: 0; font-weight: 700; color: var(--azul); }
+.invitacion__donde { margin: 0; color: var(--gris); font-size: 0.875rem; }
+.tarjeta form { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.5rem 0 0; }
+.tarjeta form button { margin: 0; }
+
+/* ======================================================================== */
+/* El selector en cajon                                                     */
+/* ======================================================================== */
+/*
+  Sustituye al desplegable del sistema, que ignora la tipografia y los
+  colores del proyecto y no puede pintar el icono de cada opcion. El <select>
+  sigue ahi, escondido: es el que viaja en el formulario.
+*/
+.selector__boton {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+  width: 100%; min-height: 3rem; padding: 0.6rem 0.9rem;
+  border: 1px solid var(--borde); border-radius: 12px;
+  background: var(--blanco); color: var(--texto);
+  font-size: 1rem; font-weight: 400; text-align: left;
+}
+.selector__boton:hover { background: var(--blanco); color: var(--texto); border-color: var(--azul-vivo); }
+.selector__boton[disabled] { opacity: 0.6; cursor: not-allowed; }
+.selector__boton--vacio { color: var(--gris); }
+
+.selector__elegido {
+  display: flex; align-items: center; gap: 0.5rem; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.selector__elegido .icono { width: 1.25rem; height: 1.25rem; vertical-align: 0; color: var(--azul-vivo); }
+.selector__flecha { width: 1rem; height: 1rem; flex-shrink: 0; color: var(--gris); }
+
+/* ---------- El cajon ---------- */
+/*
+  Es un <dialog> con showModal(): el foco queda atrapado dentro mientras esta
+  abierto, Escape lo cierra y el resto de la pagina queda inerte para los
+  lectores de pantalla. Eso a mano siempre se olvida.
+*/
+.cajon {
+  position: fixed; inset: auto 0 0 0;
+  max-height: 85dvh; width: 100%; max-width: none;
+  margin: 0; padding: 0;
+  border: 0; border-radius: 20px 20px 0 0;
+  background: var(--fondo); color: var(--texto);
+  flex-direction: column; overflow: hidden;
+
+  /* Cerrado: fuera de la pantalla, por abajo. */
+  translate: 0 100%;
+  opacity: 0;
+
+  /* `allow-discrete` es lo que permite animar la salida: sin eso el navegador
+     quita el `display` de golpe y no se ve la transicion. */
+  transition:
+    translate 0.25s ease,
+    opacity 0.25s ease,
+    overlay 0.25s allow-discrete,
+    display 0.25s allow-discrete;
+}
+
+.cajon[open] { display: flex; translate: 0 0; opacity: 1; }
+
+/* El estado desde el que entra. Sin esto abre de golpe. */
+@starting-style {
+  .cajon[open] { translate: 0 100%; opacity: 0; }
+}
+
+.cajon::backdrop { background: rgba(11, 59, 97, 0.45); }
+
+/* En pantalla grande entra por la derecha y ocupa el alto completo. */
+@media (width >= 48rem) {
+  .cajon {
+    inset: 0 0 0 auto;
+    max-height: none;
+
+    /* El alto hay que escribirlo. El navegador le da a <dialog> un
+       `height: fit-content` propio, y con eso el cajon se queda del alto de
+       su lista -una tarjeta colgando del borde de arriba- en vez de ser la
+       hoja lateral de siempre. */
+    height: 100dvh;
+    width: min(26rem, 85vw);
+    border-radius: 20px 0 0 20px;
+    translate: 100% 0;
+  }
+
+  @starting-style {
+    .cajon[open] { translate: 100% 0; }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cajon { transition: none; }
+}
+
+/* El asa de arriba, solo en el telefono: dice "esto sube desde abajo". */
+.cajon__asa {
+  width: 2.5rem; height: 0.25rem; margin: 0.6rem auto 0;
+  border-radius: 999px; background: var(--borde);
+}
+@media (width >= 48rem) { .cajon__asa { display: none; } }
+
+.cajon__titulo {
+  margin: 0; padding: 1.1rem 1.25rem;
+  font-size: 1.125rem; font-weight: 800; color: var(--azul); text-align: center;
+}
+@media (width >= 48rem) { .cajon__titulo { text-align: left; } }
+
+.cajon__lista {
+  list-style: none; margin: 0; padding: 0 1rem 1.25rem;
+  display: flex; flex-direction: column; gap: 0.5rem; overflow-y: auto;
+}
+.cajon__lista > li {
+  display: block; margin: 0; padding: 0;
+  border: 0; border-radius: 0; background: none; box-shadow: none;
+}
+
+.cajon__opcion {
+  display: flex; align-items: center; gap: 0.75rem;
+  width: 100%; min-height: 3.5rem; padding: 0 1.1rem;
+  border: 1px solid var(--borde); border-radius: 14px;
+  background: var(--blanco); color: var(--texto);
+  font-size: 1rem; font-weight: 600; text-align: left;
+}
+.cajon__opcion:hover { background: var(--azul-claro); color: var(--azul); border-color: var(--azul-vivo); }
+.cajon__opcion .icono { width: 1.5rem; height: 1.5rem; flex-shrink: 0; vertical-align: 0; color: var(--azul-vivo); }
+.cajon__texto { flex: 1; min-width: 0; }
+
+/* La palomita de la elegida. Ocupa sitio siempre -opacidad 0- para que las
+   filas no se muevan al cambiar de opcion. */
+.cajon__marca { margin-left: auto; color: var(--azul-vivo); opacity: 0; }
+.cajon__opcion[aria-pressed="true"] { border-color: var(--azul-vivo); background: var(--azul-claro); }
+.cajon__opcion[aria-pressed="true"] .cajon__marca { opacity: 1; }
+
+/* ---------- Un interruptor: casilla con su explicacion al lado ---------- */
+/*
+  La fila entera es la etiqueta, asi que tocar en cualquier parte la cambia:
+  un cuadrito de 13 px no es un objetivo razonable en un telefono.
+*/
+.interruptor {
+  display: flex; align-items: flex-start; gap: 0.85rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--borde); border-radius: 14px;
+  background: var(--blanco);
+  cursor: pointer;
+}
+.interruptor:hover { border-color: var(--azul-vivo); }
+.interruptor input { width: auto; margin: 0.15rem 0 0; flex-shrink: 0; }
+.interruptor__nombre { display: block; font-weight: 700; color: var(--azul); }
+.interruptor__ayuda { display: block; margin-top: 0.15rem; color: var(--gris); font-size: 0.8125rem; font-weight: 400; }
+
+/* ======================================================================== */
+/* El panel de administracion                                               */
+/* ======================================================================== */
+.metricas {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+@media (width >= 40rem) {
+  .metricas { grid-template-columns: repeat(4, 1fr); }
+}
+
+.metrica {
+  padding: 1.1rem;
+  border: 1px solid var(--borde); border-radius: 16px;
+  background: var(--blanco);
+}
+.metrica__valor { margin: 0; font-size: 1.75rem; font-weight: 800; line-height: 1; color: var(--azul); }
+.metrica__etiqueta { margin: 0.35rem 0 0; font-size: 0.8125rem; color: var(--gris); }
+
+/* La que pide respuesta se marca, ademas de con el numero: quien abre el
+   panel viene a ver si hay algo que atender. */
+.metrica--atencion { border-color: #f0dcb4; background: var(--ambar-claro); }
+.metrica--atencion .metrica__valor { color: var(--ambar); }
+
+/* ---------- Una barra de distribucion ---------- */
+.barra { display: flex; flex-direction: column; gap: 0.35rem; }
+.barra__linea { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+.barra__nombre { font-size: 0.8125rem; font-weight: 600; color: var(--azul); }
+.barra__dato { font-size: 0.8125rem; color: var(--gris); }
+.barra__riel { height: 0.5rem; border-radius: 999px; background: var(--borde); overflow: hidden; }
+.barra__relleno { height: 100%; border-radius: 999px; background: var(--azul-vivo); }
+
+.tendencia__numero { font-size: 1.5rem; color: var(--azul); }
+
+/* Las pastillas del panel no son un filtro: son secciones. Igual aspecto, y
+   la abierta se marca con el mismo aria-pressed. */
+.seccion > .chips { margin: 0; }
+
+/* ---------- Comparar caminos ---------- */
+#mapa-rutas { height: 320px; width: 100%; }
+@media (width >= 48rem) { #mapa-rutas { height: 420px; } }
+
+/* El cuadrado del destino. Forma distinta al circulo de la salida: quien no
+   distingue bien los colores sigue viendo donde empieza y donde acaba. */
+.pin-destino {
+  display: block; width: 1.1rem; height: 1.1rem;
+  border: 3px solid var(--blanco); border-radius: 4px;
+  background: var(--azul);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/*
+  El color de cada camino, el mismo que el de su linea en el mapa. NO es
+  verde contra rojo: eso se lee como "seguro" y "peligroso", que es justo lo
+  que estos datos no dicen. Son dos azules: identifican, no juzgan.
+*/
+.ruta__color--1 { background: #e3f0fd; color: #1976d2; }
+.ruta__color--2 { background: #e2e9f0; color: #0b3b61; }
+.ruta__color--3 { background: #eef2f6; color: #5b6b7b; }
+
+.formulario .tarjeta .cabecera__linea { align-items: center; }
+
+/* El mapa pequeno para senalar un punto dentro de un formulario. */
+.lienzo--chico { margin: 0; }
+.lienzo--chico [data-mapa-ubicacion] { height: 260px; width: 100%; }
+.lienzo[hidden] { display: none; }
+
+/* ---------- Las pantallas de recuperar la contrasena ---------- */
+/*
+  Van sobre el marco de acceso, no sobre el armazon de la aplicacion: quien
+  llega aqui NO tiene sesion, y ensenarle la lateral con un nombre y unas
+  secciones seria ensenarle la aplicacion de otra persona.
+*/
+/*
+  `.marco-acceso > main` es un flex pensado para la tarjeta de acceso, que
+  ocupa la pantalla entera. Esta tarjeta es pequena, asi que hay que decirle
+  al contenedor que la centre: con `margin: auto` sola se iba a una esquina.
+*/
+.marco-acceso > main:has(.clave) { align-items: center; justify-content: center; padding: 1.5rem; }
+
+.clave {
+  width: 100%; max-width: 26rem; margin: auto;
+  display: flex; flex-direction: column; gap: 0.9rem;
+  padding: 2rem;
+  border: 1px solid var(--borde); border-radius: 20px;
+  background: var(--blanco);
+  box-shadow: 0 10px 30px rgba(11, 59, 97, 0.12);
+}
+.clave__titulo { margin: 0; font-size: 1.5rem; font-weight: 800; text-align: center; }
+.clave__ayuda { margin: 0; color: var(--gris); font-size: 0.9rem; }
+.clave__pie { margin: 0.5rem 0 0; text-align: center; font-size: 0.9rem; }
+.clave form { margin: 0.5rem 0 0; display: flex; flex-direction: column; gap: 0.9rem; }
+
+.acceso__olvide { margin: -0.3rem 0 0; text-align: right; font-size: 0.85rem; }
+
+/* ---------- "¿Algo de esto esta mal?" ---------- */
+/*
+  Un <details>: cerrado es una linea, y solo quien tiene algo que avisar lo
+  abre. Un formulario desplegado en la ficha de cada punto seria ruido para
+  los noventa y nueve de cada cien que solo vienen a ver el horario.
+*/
+.correccion {
+  margin: 1.5rem 0;
+  padding: 0 1.1rem;
+  border: 1px solid var(--borde); border-radius: 14px;
+  background: var(--blanco);
+}
+.correccion__abrir {
+  padding: 0.9rem 0; cursor: pointer;
+  font-size: 0.9375rem; font-weight: 600; color: var(--azul-vivo);
+  list-style: none;
+}
+.correccion__abrir::-webkit-details-marker { display: none; }
+.correccion__abrir::marker { content: ""; }
+.correccion__abrir:hover { color: var(--azul); }
+.correccion[open] .correccion__abrir { border-bottom: 1px solid var(--borde); }
+.correccion form { display: flex; flex-direction: column; gap: 0.75rem; margin: 1rem 0; }
+.correccion .campo__ayuda { display: block; padding-bottom: 1.1rem; }
+
+.correccion-list .tarjeta form { margin: 0; }
+
+/* Los atajos de destinos guardados dentro de una caja de ubicacion. */
+.atajos { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.atajos .chip { cursor: pointer; }
+
+/* ---------- Casillas de grupos y permisos (templates/_casillas.html) ---------- */
+.casillas {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--borde);
+  border-radius: 14px;
+  background: var(--blanco);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.casillas legend { padding: 0 0.35rem; font-weight: 600; color: var(--azul); font-size: 0.9rem; }
+.casillas__grupo + .casillas__grupo { border-top: 1px solid var(--borde); padding-top: 0.75rem; }
+.casillas__titulo { margin: 0 0 0.4rem; font-weight: 600; color: var(--texto); font-size: 0.85rem; }
+.casillas__lista { display: flex; flex-wrap: wrap; gap: 0.4rem 1.25rem; }
+.casilla { display: inline-flex; align-items: center; gap: 0.4rem; font-weight: 400; color: var(--texto); cursor: pointer; }
+/* Más específico que `.formulario input:not(.sr-only)`, que estira los campos a todo el ancho. */
+.formulario .casilla input[type="checkbox"],
+.casilla input[type="checkbox"] { width: auto; margin: 0; align-self: center; }
+
+/* Las casillas sueltas ("Activo", "Leída") a la izquierda y de su tamaño.
+   `.formulario input:not(.sr-only)` las estiraba a todo el ancho y el
+   cuadrito acababa en medio de la pantalla. */
+.formulario input[type="checkbox"]:not(.sr-only) { width: auto; align-self: flex-start; }
+/* Y dentro de un grupo de casillas, centradas con su texto (va después de la
+   regla de arriba para ganarle). */
+.formulario .casilla input[type="checkbox"]:not(.sr-only) { align-self: center; }

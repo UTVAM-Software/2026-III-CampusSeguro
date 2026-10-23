@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% comment %}
+Los grupos de Django: cada uno junta cuentas y les da unos permisos.
+Los tres de rol los crea el sistema; el resto, la superadministración.
+{% endcomment %}
+
+{% block volver %}<a class="atras" href="{% url 'panel' %}">← Volver al panel</a>{% endblock %}
+
+{% block content %}
+<h1>Grupos</h1>
+<p class="intro">
+  Cada cuenta está en el grupo de su rol. Puedes crear otros grupos para darle
+  permisos extra a algunas cuentas.
+</p>
+
+<div class="acciones">
+  {% if perms.auth.add_group %}<a class="boton" href="{% url 'grupo-create' %}">Nuevo grupo</a>{% endif %}
+  {% if perms.auth.view_permission %}<a class="boton secundario" href="{% url 'permiso-list' %}">Permisos</a>{% endif %}
+</div>
+
+<ul class="filas">
+  {% for g in object_list %}
+    <li>
+      <a href="{% url 'grupo-detail' g.pk %}">{{ g.name }}</a>
+      {% if g.name in grupos_de_rol %}<span class="insignia">Rol</span>{% endif %}
+      <span class="ficha__meta">{{ g.num_miembros }} cuenta{{ g.num_miembros|pluralize }} · {{ g.num_permisos }} permiso{{ g.num_permisos|pluralize }}</span>
+      {% if perms.auth.change_group %}<a class="accion" href="{% url 'grupo-update' g.pk %}">Editar</a>{% endif %}
+      {% if perms.auth.delete_group and g.name not in grupos_de_rol %}
+        <a class="accion quitar" href="{% url 'grupo-delete' g.pk %}">Eliminar</a>
+      {% endif %}
+    </li>
+  {% empty %}
+    <li>Todavía no hay grupos.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

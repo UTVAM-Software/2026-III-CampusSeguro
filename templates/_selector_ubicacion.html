@@ -1,0 +1,31 @@
+{% load static %}{% comment %}
+Los botones para poner unas coordenadas sin escribirlas a mano.
+
+    {% include '_selector_ubicacion.html' %}
+
+Va en cualquier formulario que tenga `latitud` y `longitud`. El guion
+(static/js/ubicacion.js) lo mueve justo encima del campo de latitud y lo
+enciende; si esos campos no están, no hace nada.
+
+Nace escondido (`hidden`) y el guion lo destapa: así, sin JavaScript, no
+quedan tres botones muertos en la pantalla. Los campos siguen ahí y se pueden
+rellenar a mano.
+{% endcomment %}
+<div data-ubicacion hidden>
+  <div class="ubicacion">
+    <button type="button" data-mi-ubicacion class="boton secundario">
+      {% include '_icono.html' with nombre='pin_ubicacion' %} Usar mi ubicación
+    </button>
+    <button type="button" data-otra-direccion class="boton secundario">
+      {% include '_icono.html' with nombre='lupa_mapa' %} Escribir dirección
+    </button>
+  </div>
+
+  <div class="buscador" data-buscador hidden>
+    <input type="text" data-direccion placeholder="Ej. Plaza Juárez, Pachuca, Hidalgo">
+    <button type="button" data-buscar class="boton">Buscar</button>
+  </div>
+
+  <p class="intro" data-estado></p>
+</div>
+<script src="{% static 'js/ubicacion.js' %}?v={{ VERSION_CSS }}" defer></script>

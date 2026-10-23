@@ -1,0 +1,36 @@
+{% comment %}
+Un campo de casillas (permisos, grupos o cuentas), con su etiqueta y ayuda.
+
+    {% include '_casillas.html' with campo=form.permissions agrupar=True %}
+
+Con `agrupar`, las casillas de permisos salen bajo el nombre de su modelo
+("reportes · reporte": Ver, Crear, Editar, Eliminar). Sin él, en una lista.
+{% endcomment %}
+<fieldset class="casillas">
+  <legend>{{ campo.label }}</legend>
+  {% if campo.help_text %}<small class="campo__ayuda">{{ campo.help_text }}</small>{% endif %}
+
+  {% if agrupar %}
+    {% regroup campo by data.value.instance.content_type as por_modelo %}
+    {% for modelo in por_modelo %}
+      <div class="casillas__grupo">
+        <p class="casillas__titulo">{{ modelo.grouper.app_label }} · {{ modelo.grouper.name }}</p>
+        <div class="casillas__lista">
+          {% for casilla in modelo.list %}
+            <label class="casilla">{{ casilla.tag }} {{ casilla.choice_label }}</label>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <div class="casillas__lista">
+      {% for casilla in campo %}
+        <label class="casilla">{{ casilla.tag }} {{ casilla.choice_label }}</label>
+      {% empty %}
+        <p class="campo__ayuda">No hay opciones todavía.</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% for error in campo.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+</fieldset>

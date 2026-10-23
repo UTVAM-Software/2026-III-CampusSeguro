@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static fechas %}
+
+{% comment %}
+Comparar dos caminos por lo que la comunidad ha registrado en ellos.
+
+LO QUE ESTA PANTALLA DICE Y LO QUE NO
+    Dice cuántas condiciones hay registradas cerca de cada camino, y de qué
+    tipo. No dice cuál es seguro, no puntúa y no predice.
+
+    Por eso no hay un índice de 0 a 100: un solo número se lee como nota de
+    seguridad por mucho que la letra pequeña diga otra cosa.
+{% endcomment %}
+
+{% block extra_head %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+        integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+{% endblock %}
+
+{% block volver %}<a class="atras" href="{% url 'mapa' %}">← Volver al mapa</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre='dos_pines' %}Comparar caminos</h1>
+  </div>
+  <p class="cabecera__meta">
+    Qué ha registrado la comunidad cerca de cada ruta a pie.
+  </p>
+</header>
+
+<form class="formulario" method="get" novalidate>
+  {% include '_campo.html' with campo=form.origen %}
+
+  <div class="tarjeta" data-ubicacion data-par="origen">
+    <h2 class="tarjeta__titulo">Dónde empiezas</h2>
+    {{ form.latitud_origen }}
+    {{ form.longitud_origen }}
+
+    <div class="aviso" role="status">
+      <span class="aviso__icono" aria-hidden="true">◎</span>
+      <div>
+        <p class="aviso__titulo" data-titulo>Sin punto de salida</p>
+        <p data-estado>Usa tu ubicación o escribe la dirección de arriba.</p>
+      </div>
+    </div>
+
+    {% if destinos %}
+      {% comment %}
+      Los destinos guardados. Para esto se guardaron: aquí lo caro de
+      conseguir son las coordenadas, y un toque las pone.
+      {% endcomment %}
+      <div class="atajos">
+        {% for d in destinos %}
+          <button type="button" class="chip" data-destino-guardado
+                  data-lat="{{ d.latitud }}" data-lng="{{ d.longitud }}"
+                  data-etiqueta="{{ d.etiqueta }}">{{ d.etiqueta }}</button>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <button type="button" class="boton secundario bloque" data-mi-ubicacion>
+      Usar mi ubicación actual
+    </button>
+    <button type="button" class="boton secundario bloque" data-otra-direccion>
+      Buscar la dirección escrita
+    </button>
+
+    <div class="buscador" data-buscador hidden>
+      <input type="text" data-direccion placeholder="Ej. UTVAM, Tizayuca">
+      <button type="button" class="boton" data-buscar>Buscar</button>
+    </div>
+  </div>
+
+  {% include '_campo.html' with campo=form.destino %}
+
+  <div class="tarjeta" data-ubicacion data-par="destino">
+    <h2 class="tarjeta__titulo">Dónde terminas</h2>
+    {{ form.latitud_destino }}
+    {{ form.longitud_destino }}
+
+    <div class="aviso" role="status">
+      <span class="aviso__icono" aria-hidden="true">◎</span>
+      <div>
+        <p class="aviso__titulo" data-titulo>Sin destino</p>
+        <p data-estado>Usa tu ubicación o escribe la dirección de arriba.</p>
+      </div>
+    </div>
+
+    {% if destinos %}
+      {% comment %}
+      Los destinos guardados. Para esto se guardaron: aquí lo caro de
+      conseguir son las coordenadas, y un toque las pone.
+      {% endcomment %}
+      <div class="atajos">
+        {% for d in destinos %}
+          <button type="button" class="chip" data-destino-guardado
+                  data-lat="{{ d.latitud }}" data-lng="{{ d.longitud }}"
+                  data-etiqueta="{{ d.etiqueta }}">{{ d.etiqueta }}</button>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <button type="button" class="boton secundario bloque" data-mi-ubicacion>
+      Usar mi ubicación actual
+    </button>
+    <button type="button" class="boton secundario bloque" data-otra-direccion>
+      Buscar la dirección escrita
+    </button>
+
+    <div class="buscador" data-buscador hidden>
+      <input type="text" data-direccion placeholder="Ej. Paradero de Los Héroes">
+      <button type="button" class="boton" data-buscar>Buscar</button>
+    </div>
+  </div>
+
+  <button type="submit" class="bloque">Comparar</button>
+</form>
+
+{% comment %}
+Cuando OSRM no responde se dice, y no se dibuja una recta en su lugar: el
+recuento saldría sobre un camino que nadie va a andar y tendría aspecto de
+dato bueno.
+{% endcomment %}
+{% if fallo %}
+  <div class="aviso atencion" role="status">
+    <span class="aviso__icono" aria-hidden="true">⏱</span>
+    <div>
+      <p class="aviso__titulo">El servicio de rutas no respondió</p>
+      <p>Vuelve a intentarlo en un momento. No dibujamos un camino inventado.</p>
+    </div>
+  </div>
+{% endif %}
+
+{% if caminos %}
+  <div class="lienzo">
+    <div id="mapa-rutas" role="application"
+         aria-label="Mapa con los caminos comparados"></div>
+  </div>
+
+  {% for camino in caminos %}
+    <div class="tarjeta">
+      <div class="cabecera__linea">
+        <h2 class="tarjeta__titulo">
+          {% if caminos|length > 1 %}Camino {{ camino.numero }}{% else %}El camino{% endif %}
+        </h2>
+        <span class="insignia ruta__color ruta__color--{{ camino.numero }}">
+          {{ camino.metros }} m · {{ camino.minutos }} min
+        </span>
+      </div>
+
+      <div class="datos">
+        <div class="dato {% if not camino.reportes %}apagado{% endif %}">
+          <p class="dato__valor">{{ camino.reportes|length }}</p>
+          <p class="dato__etiqueta">condiciones registradas</p>
+        </div>
+        <div class="dato apagado">
+          <p class="dato__valor">{{ camino.apoyos }}</p>
+          <p class="dato__etiqueta">puntos de apoyo cerca</p>
+        </div>
+      </div>
+
+      {% if camino.reportes %}
+        <ul class="fichas fichas--dentro">
+          {% for r in camino.reportes %}
+            <li>
+              <a class="ficha" href="{{ r.get_absolute_url }}">
+                <span class="ficha__cabecera">
+                  <span class="ficha__titulo">
+                    {% include '_icono.html' with nombre=r.icono %}{{ r.get_tipo_display }}
+                  </span>
+                  {% include '_insignia.html' with texto=r.get_estado_display tono=r.tono_estado %}
+                </span>
+                <p class="ficha__meta">Registrado {{ r.fecha_creacion|hace }}</p>
+              </a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="ajustes__texto">
+          Nadie ha registrado nada cerca de este camino en los últimos
+          {{ dias }} días.
+        </p>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  {% comment %}
+  Esta advertencia no es relleno legal. Sin ella, dos números uno al lado del
+  otro se leen como "este camino es más seguro", y eso es exactamente lo que
+  estos datos NO dicen.
+  {% endcomment %}
+  <div class="aviso" role="status">
+    <span class="aviso__icono" aria-hidden="true">i</span>
+    <div>
+      <p class="aviso__titulo">Qué significan estos números, y qué no</p>
+      <p>
+        Son las condiciones que alguien registró a menos de {{ metros }} m del
+        camino en los últimos {{ dias }} días. No es una medida de seguridad:
+        un camino sin reportes puede no tenerlos porque no pasa nadie por ahí,
+        que es lo contrario de lo que un cero parecería decir.
+      </p>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block descargo %}
+  Campus Seguro no calcula rutas seguras ni detecta peligro. Compara lo que la
+  comunidad ha registrado.
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="{% static 'js/ubicacion.js' %}?v={{ VERSION_CSS }}" defer></script>
+  {% if caminos %}
+    {{ datos_rutas|json_script:"datos-rutas" }}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+            integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    {# mapa.js trae la capa de fondo, que es comun a los dos mapas. #}
+    <script src="{% static 'js/mapa.js' %}?v={{ VERSION_CSS }}" defer></script>
+    <script src="{% static 'js/rutas.js' %}?v={{ VERSION_CSS }}" defer></script>
+  {% endif %}
+{% endblock %}

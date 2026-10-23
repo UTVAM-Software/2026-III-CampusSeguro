@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% comment %}
+Registrar una condición del camino.
+
+`enctype="multipart/form-data"` hace falta para que el navegador mande la
+foto. Sin eso el formulario se envía igual, el reporte se guarda igual, y el
+archivo se queda por el camino sin que nadie diga nada: el campo aparece
+vacío y parece que la subida "no funciona".
+{% endcomment %}
+
+{% block extra_head %}
+  {% comment %}
+  Leaflet, para poder senalar el punto en el mapa. Version fija y con su
+  huella: el navegador rechaza el archivo si llega cambiado.
+  {% endcomment %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+        integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+{% endblock %}
+
+{% block volver %}<a class="atras" href="{% url 'reporte-list' %}">← Volver a reportes</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% if object %}Editar reporte{% else %}Reportar situación{% endif %}</h1>
+  </div>
+  <p class="cabecera__meta">
+    Lo que registres será visible para la comunidad de tu campus.
+  </p>
+</header>
+
+<form class="formulario" method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+
+  {% if form.non_field_errors %}
+    <div class="aviso alerta" role="alert">
+      <span class="aviso__icono" aria-hidden="true">✕</span>
+      <div>
+        <p class="aviso__titulo">Revisa el formulario</p>
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  {% comment %}
+  El tipo va en un cajon y no en el desplegable del sistema: aquel no puede
+  pintar el icono de cada categoria, y en un telefono sale una rueda donde
+  "Acceso bloqueado" y "Accidente" se distinguen mal. Dentro sigue el
+  <select> de siempre, que es el que viaja.
+  {% endcomment %}
+  <div data-selector>
+    <div data-sin-js>{% include '_campo.html' with campo=form.tipo %}</div>
+  </div>
+  {% include '_campo.html' with campo=form.descripcion %}
+  {% if form.estado %}{% include '_campo.html' with campo=form.estado %}{% endif %}
+
+  {# ------------------------------ Ubicación ----------------------------- #}
+  {% comment %}
+  Las coordenadas van escondidas y las rellenan los botones de aquí. Teclear
+  20.122877 a mano es pedir una errata que deja el punto en otra calle.
+  {% endcomment %}
+  <div class="tarjeta" data-ubicacion>
+    <h2 class="tarjeta__titulo">Ubicación</h2>
+
+    {{ form.latitud }}
+    {{ form.longitud }}
+
+    <div class="aviso" role="status">
+      <span class="aviso__icono" aria-hidden="true">◎</span>
+      <div>
+        <p class="aviso__titulo" data-titulo>Sin ubicación todavía</p>
+        <p data-estado>Necesitamos saber dónde ocurre para poder mostrarlo en el mapa.</p>
+      </div>
+    </div>
+
+    {% comment %}
+    Señalar con el dedo. Los dos botones de arriba sirven para "estoy aquí" y
+    para una dirección; una caseta de vigilancia dentro del campus no tiene
+    dirección propia, y para eso hace falta el mapa.
+
+    Nace escondido y lo destapa el guion: sin Leaflet no se queda un recuadro
+    gris sin explicación.
+    {% endcomment %}
+    <div class="lienzo lienzo--chico" hidden>
+      <div data-mapa-ubicacion
+           {% if user.campus %}data-centro="{{ user.campus.latitud }},{{ user.campus.longitud }}"{% endif %}></div>
+    </div>
+
+    <button type="button" class="boton secundario bloque" data-mi-ubicacion>
+      Usar mi ubicación actual
+    </button>
+    <button type="button" class="boton secundario bloque" data-otra-direccion>
+      Escribir una dirección
+    </button>
+
+    <div class="buscador" data-buscador hidden>
+      <input type="text" data-direccion placeholder="Ej. Plaza Juárez, Pachuca, Hidalgo">
+      <button type="button" class="boton" data-buscar>Buscar</button>
+    </div>
+
+    {% for error in form.latitud.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+    {% for error in form.longitud.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+
+    <p class="campo__ayuda">
+      Esta ubicación se usa solo para situar el reporte. No es rastreo: no se
+      guarda tu posición fuera de este registro.
+    </p>
+
+    {% comment %}
+    Los dos botones necesitan JavaScript. Si no carga, los campos quedan
+    vacíos y el formulario no se puede enviar: mejor decirlo aquí que dejar a
+    alguien pulsando un botón muerto.
+    {% endcomment %}
+    <noscript>
+      <p class="campo__error">
+        Para situar el reporte hace falta JavaScript. Actívalo o pide a
+        alguien de la administración que lo registre por ti.
+      </p>
+    </noscript>
+  </div>
+
+  {# ------------------------------ Fotografía ---------------------------- #}
+  {% comment %}
+  LAS DOS VERSIONES ESTÁN AQUÍ, ESCRITAS POR DJANGO
+      `data-sin-js` es el campo de archivo de siempre: lo que se ve si el
+      guion no carga, y con lo que se adjunta igual de bien. `data-con-js` es
+      el área de arrastrar, que llega oculta y solo se enciende cuando el
+      guion arranca; si no arranca, nadie ve un botón muerto.
+  {% endcomment %}
+  <div data-adjunto>
+    <div data-sin-js>
+      {% include '_campo.html' with campo=form.foto %}
+    </div>
+
+    <div class="campo" data-con-js hidden>
+      <span class="campo__etiqueta">{{ form.foto.label }}</span>
+
+      {% comment %}
+      El área es un `div` y el botón va dentro, no al revés: un botón no
+      puede contener otro botón. Tocar en cualquier parte del área abre el
+      diálogo igual —el clic del botón sube hasta aquí—, y quien usa el
+      teclado llega al botón tabulando, que es lo que un `div` no le daría.
+
+      El icono va dibujado aquí y no con `_icono.html` porque en el juego de
+      Lady todavía no hay uno de subir. Cuando llegue, esto se cambia por una
+      línea y el resto se queda igual.
+      {% endcomment %}
+      <div class="adjunto__zona" data-zona>
+        <svg class="adjunto__icono" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6.6 19.5a4.6 4.6 0 0 1-.7-9.15 6.1 6.1 0 0 1 11.86-1.3A4.35 4.35 0 0 1 17.9 19.5"/>
+          <path d="M12 21v-8.4"/>
+          <path d="m8.9 15.7 3.1-3.1 3.1 3.1"/>
+        </svg>
+
+        <p class="adjunto__titulo">Elige una foto o arrástrala aquí</p>
+        <p class="adjunto__limites">{{ form.foto.help_text }}</p>
+
+        <button type="button" class="adjunto__elegir">Elegir foto</button>
+      </div>
+
+      <figure class="adjunto" data-tarjeta hidden>
+        <img class="adjunto__vista" data-vista alt="">
+        <figcaption class="adjunto__pie">
+          <span class="adjunto__datos">
+            <span class="adjunto__nombre" data-nombre></span>
+            <span class="adjunto__meta" data-meta></span>
+          </span>
+          <span class="adjunto__acciones">
+            <button type="button" class="adjunto__accion" data-cambiar>Cambiar</button>
+            <button type="button" class="adjunto__accion quitar" data-quitar>Quitar</button>
+          </span>
+        </figcaption>
+      </figure>
+
+      <p class="campo__error" role="alert" data-aviso hidden></p>
+    </div>
+  </div>
+
+  <button type="submit" class="bloque">
+    {% if object %}Guardar cambios{% else %}Publicar reporte{% endif %}
+  </button>
+</form>
+{% endblock %}
+
+{% block descargo %}
+  Reporta lo que observaste, sin señalar a personas concretas. La información
+  la revisa la administración del campus.
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+          integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  {# mapa.js trae la capa de fondo, comun a todos los mapas del proyecto. #}
+  <script src="{% static 'js/mapa.js' %}?v={{ VERSION_CSS }}" defer></script>
+  <script src="{% static 'js/selector.js' %}?v={{ VERSION_CSS }}" defer></script>
+  <script src="{% static 'js/ubicacion.js' %}?v={{ VERSION_CSS }}" defer></script>
+  <script src="{% static 'js/adjunto.js' %}?v={{ VERSION_CSS }}" defer></script>
+{% endblock %}

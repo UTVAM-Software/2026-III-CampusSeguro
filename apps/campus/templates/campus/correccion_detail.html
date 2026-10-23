@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load fechas %}
+
+{% block volver %}<a class="atras" href="{% url 'correccion-list' %}">← Volver a los avisos</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre=object.punto.icono %}{{ object.punto.nombre }}</h1>
+    {% include '_insignia.html' with texto=object.get_motivo_display tono=object.tono_motivo %}
+  </div>
+  <p class="cabecera__meta">Avisó {{ object.usuario }} · {{ object.fecha|hace }}</p>
+</header>
+
+<div class="tarjeta">
+  {% if object.comentario %}<p class="ficha__texto">«{{ object.comentario }}»</p>{% endif %}
+  <p class="ficha__meta">
+    {% if object.atendida %}Revisado {{ object.fecha_atendida|hace }}{% else %}Esperando revisión{% endif %}
+  </p>
+</div>
+
+<div class="acciones">
+  <a class="boton secundario" href="{{ object.punto.get_absolute_url }}">Ver el punto</a>
+
+  {% comment %}
+  Corregir es de quien lo escribió, y solo mientras no lo hayan revisado:
+  después, cambiarlo reescribiría lo que ya se leyó. Esconder el enlace no
+  protege nada -lo hace `get_queryset()` con un 404-, es para no ofrecer una
+  puerta que se cierra en la cara.
+  {% endcomment %}
+  {% if object.usuario_id == user.pk and not object.atendida %}
+    <a class="boton secundario" href="{% url 'correccion-update' object.pk %}">Corregir</a>
+  {% endif %}
+  <a class="boton secundario quitar" href="{% url 'correccion-delete' object.pk %}">Eliminar</a>
+</div>
+{% endblock %}

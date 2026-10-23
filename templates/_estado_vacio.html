@@ -1,0 +1,40 @@
+{% comment %}
+El hueco de una lista sin registros.
+
+    {% include '_estado_vacio.html' with icono='viajes' titulo='Todavía no hay viajes' texto='Los trayectos con acompañamiento aparecerán aquí.' only %}
+
+POR QUÉ NO ES UN <li> MÁS
+    Antes cada lista acababa en `<li>No hay registros.</li>`, y la hoja de
+    estilos dibuja los `<li>` como tarjetas de registro: el hueco se veía
+    igual que una fila de datos, con su recuadro y su sombra. Parecía que
+    había un registro llamado "No hay registros".
+
+    Además un `<div>` dentro de un `<ul>` no es HTML válido, así que esto va
+    fuera de la lista: la plantilla pregunta `{% if object_list %}` y dibuja o
+    la lista o el hueco, nunca los dos.
+
+EL BOTÓN NO VA EN TODOS, Y ES A PROPÓSITO
+    `accion_url` y `accion_texto` lo dibujan; sin los dos no hay botón.
+
+    Las listas no lo llevan: todas tienen su "Nuevo ..." justo encima del
+    hueco, y serían dos botones a lo mismo a cuatro centímetros. Donde sí va
+    es en el inicio, que no tiene ese botón arriba.
+
+    Y no va donde quien mira no podría hacerlo: "Todavía no hay puntos de
+    apoyo" no lleva botón para quien estudia, porque los registra quien
+    administra, y ofrecer esa puerta sería mandar a un 403. Eso lo decide la
+    plantilla que incluye esto, que es la que sabe quién está mirando.
+
+SE INCLUYE CON `only`
+    Así solo ve lo que se le pasa, y ninguna variable de la pantalla se le
+    cuela por detrás.
+{% endcomment %}
+<div class="estado">
+  <span class="estado__icono">{% include '_icono.html' with nombre=icono %}</span>
+  <p class="estado__titulo">{{ titulo }}</p>
+  <p class="estado__texto">{{ texto }}</p>
+
+  {% if accion_url and accion_texto %}
+    <a class="boton" href="{{ accion_url }}">{{ accion_texto }}</a>
+  {% endif %}
+</div>

@@ -1,0 +1,15 @@
+{% comment %}
+El estado de algo, como una pastilla de color.
+
+    {% include '_insignia.html' with texto=r.get_estado_display tono=r.tono_estado %}
+
+EL COLOR NO ES LA ÚNICA SEÑAL
+    Dentro va siempre el texto del estado —"Verificado", "Sin leer"—, no solo
+    el color. Quien no distingue el verde del rojo lee la palabra igual, y
+    quien mira la pantalla al sol tambien.
+
+DE DÓNDE SALE EL TONO
+    De una propiedad del modelo (`tono_estado`, `tono_nivel`), que vive junto
+    a la lista de estados. Así añadir un estado nuevo y olvidarse de su color
+    es difícil: las dos cosas están en la misma pantalla del editor.
+{% endcomment %}<span class="insignia {{ tono }}">{{ texto }}</span>

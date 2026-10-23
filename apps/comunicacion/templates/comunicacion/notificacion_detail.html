@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load fechas %}
+
+{% comment %}
+El detalle de una notificación.
+
+El botón de marcarla sigue siendo un formulario por POST: cambia datos, y un
+enlace lo dispararía cualquier cosa que vaya precargando enlaces.
+{% endcomment %}
+
+{% block volver %}<a class="atras" href="{% url 'notificacion-list' %}">← Volver a notificaciones</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre='notificacion' %}{{ object.titulo }}</h1>
+    {% if object.leida %}
+      {% include '_insignia.html' with texto='Leída' tono='apagada' %}
+    {% else %}
+      {% include '_insignia.html' with texto='Sin leer' %}
+    {% endif %}
+  </div>
+  <p class="cabecera__meta">{{ object.fecha|hace }}</p>
+</header>
+
+<div class="tarjeta">
+  <p>{{ object.mensaje|linebreaksbr }}</p>
+</div>
+
+<form class="suelto" method="post" action="{% url 'notificacion-leida' object.pk %}">
+  {% csrf_token %}
+  <button type="submit" class="boton secundario bloque">
+    {% if object.leida %}Marcar como sin leer{% else %}Marcar como leída{% endif %}
+  </button>
+</form>
+{% endblock %}

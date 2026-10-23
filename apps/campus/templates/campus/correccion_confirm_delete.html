@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>¿Eliminar este aviso?</h1>
+
+<p class="mensaje">
+  Los avisos revisados sirven de historial: si un punto da problemas seguido,
+  es la prueba para darlo de baja. Elimina solo los que sean un error o spam.
+</p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Sí, eliminar</button>
+</form>
+<a class="boton secundario" href="{{ object.get_absolute_url }}">Cancelar</a>
+{% endblock %}

@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+{% load fechas %}
+
+{% comment %}
+Viajes, en secciones y no en una lista.
+
+Una lista sola mezcla cosas que se miran por motivos distintos: el viaje que
+tienes abierto ahora, las invitaciones que esperan tu respuesta, los viajes
+de otra gente que acompañas y los tuyos ya terminados. Lo urgente quedaba al
+mismo nivel que un viaje del mes pasado.
+
+NO HAY "NUEVO VIAJE" ARRIBA
+    La acción está dentro del hueco de "Tu viaje", que es donde se entiende
+    para qué sirve. Y si ya tienes uno abierto no sale, porque planificar
+    otro mientras uno está en curso no es lo que nadie quiere hacer ahí.
+{% endcomment %}
+
+{% block content %}
+<h1>Viajes</h1>
+
+{# Los sitios a los que vas siempre, para no escribir la direccion cada vez. #}
+<div class="acciones">
+  <a class="boton secundario" href="{% url 'destino-list' %}">Tus destinos</a>
+</div>
+
+{# ------------------------ Invitaciones pendientes ----------------------- #}
+{% comment %}
+Lo primero de la pantalla: alguien está esperando una respuesta, y hasta que
+la des no ve nada de su viaje.
+{% endcomment %}
+{% if invitaciones %}
+  <section class="seccion" aria-labelledby="titulo-invitaciones">
+    <h2 id="titulo-invitaciones">Te invitaron a acompañar</h2>
+
+    {% for i in invitaciones %}
+      <div class="tarjeta">
+        <p class="invitacion__quien">{{ i.viaje.usuario }}</p>
+        <p class="invitacion__donde">Va hacia {{ i.viaje.destino }}</p>
+
+        <form method="post" action="{% url 'invitacion-responder' i.pk %}">
+          {% csrf_token %}
+          <button type="submit" name="respuesta" value="aceptar" class="bloque">
+            Aceptar y acompañar
+          </button>
+          <button type="submit" name="respuesta" value="rechazar" class="boton secundario bloque">
+            Rechazar
+          </button>
+        </form>
+      </div>
+    {% endfor %}
+  </section>
+{% endif %}
+
+{# ----------------------------- Tu viaje -------------------------------- #}
+<section class="seccion" aria-labelledby="titulo-actual">
+  <h2 id="titulo-actual">Tu viaje</h2>
+
+  {% if viaje_en_curso %}
+    <ul class="fichas">
+      <li>
+        <a class="ficha" href="{{ viaje_en_curso.get_absolute_url }}">
+          <span class="ficha__cabecera">
+            <span class="ficha__titulo">
+              {% include '_icono.html' with nombre='viajes' %}{{ viaje_en_curso.destino }}
+            </span>
+            {% include '_insignia.html' with texto=viaje_en_curso.get_estado_display tono=viaje_en_curso.tono_estado %}
+          </span>
+          <p class="ficha__meta">
+            Desde {{ viaje_en_curso.origen }} · empezó {{ viaje_en_curso.fecha_inicio|hace }}
+            {% if viaje_en_curso.minutos_restantes is not None %}
+              · quedan {{ viaje_en_curso.minutos_restantes }} min
+            {% endif %}
+          </p>
+        </a>
+      </li>
+    </ul>
+  {% else %}
+    <div class="tarjeta">
+      {% url 'viaje-create' as ir_a_planificar %}
+      {% include '_estado_vacio.html' with icono='viajes' titulo='No tienes viajes en curso' texto='Planifica un trayecto y comparte tu ubicación con quien tú elijas mientras dure.' accion_url=ir_a_planificar accion_texto='Planificar viaje' only %}
+    </div>
+  {% endif %}
+</section>
+
+{# -------------------------- Estás acompañando -------------------------- #}
+{% if acompanamientos %}
+  <section class="seccion" aria-labelledby="titulo-acompano">
+    <h2 id="titulo-acompano">Estás acompañando</h2>
+
+    <ul class="fichas">
+      {% for a in acompanamientos %}
+        <li>
+          <a class="ficha" href="{{ a.viaje.get_absolute_url }}">
+            <span class="ficha__cabecera">
+              <span class="ficha__titulo">
+                {% include '_icono.html' with nombre='perfil' %}{{ a.viaje.usuario }}
+              </span>
+              {% include '_insignia.html' with texto=a.viaje.get_estado_display tono=a.viaje.tono_estado %}
+            </span>
+            <p class="ficha__meta">Hacia {{ a.viaje.destino }}</p>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+{% endif %}
+
+{# ---------------------------- El historial ----------------------------- #}
+<section class="seccion" aria-labelledby="titulo-historial">
+  <h2 id="titulo-historial">Tus viajes anteriores</h2>
+
+  {% if historial %}
+    <ul class="fichas">
+      {% for v in historial %}
+        <li>
+          <a class="ficha" href="{{ v.get_absolute_url }}">
+            <span class="ficha__cabecera">
+              <span class="ficha__titulo">
+                {% include '_icono.html' with nombre='viajes' %}{{ v.destino }}
+              </span>
+              {% include '_insignia.html' with texto=v.get_estado_display tono=v.tono_estado %}
+            </span>
+            <p class="ficha__meta">
+              Desde {{ v.origen }} ·
+              {% if v.fecha_fin %}terminó {{ v.fecha_fin|hace }}{% else %}empezó {{ v.fecha_inicio|hace }}{% endif %}
+            </p>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <p class="campo__ayuda">
+      Solo se guarda el viaje, nunca el recorrido: las posiciones se borran al
+      terminarlo.
+    </p>
+  {% else %}
+    <div class="tarjeta">
+      {% comment %}
+      Sin botón: el de planificar ya está arriba, en "Tu viaje".
+      {% endcomment %}
+      {% include '_estado_vacio.html' with icono='viajes' titulo='Todavía no has hecho ningún viaje' texto='Aquí aparecerán los que completes.' only %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

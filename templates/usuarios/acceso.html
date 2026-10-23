@@ -1,0 +1,151 @@
+{% extends 'usuarios/_marco_acceso.html' %}
+{% load static %}
+
+{% block titulo %}{% if modo == 'registro' %}Crear cuenta{% else %}Entrar{% endif %}{% endblock %}
+
+{% comment %}
+Iniciar sesión y crear cuenta en la misma pantalla, con un panel de color que
+barre de un lado al otro al cambiar de modo.
+
+CÓMO CAMBIA DE MODO SIN JAVASCRIPT
+    Dos radios ocultos delante de la tarjeta. Las "pestañas" y los botones de
+    la invitación son sus etiquetas, y todo el movimiento lo hacen reglas de
+    CSS que miran cuál está marcado (`#acceso-registro:checked ~ …`). No hay
+    una línea de JavaScript: funciona con el archivo bloqueado, con la
+    conexión caída y con el teclado.
+
+LOS DOS FORMULARIOS SON DE DJANGO
+    Cada uno es un `<form method="post">` normal a su vista de siempre, con su
+    testigo CSRF y sus errores dibujados por Django. El lado que no se ve
+    queda `visibility: hidden`, que además de esconderlo lo saca del tabulador
+    y de los lectores de pantalla.
+
+    Por eso `modo` importa: si el registro falla, la pantalla tiene que volver
+    enseñando ese lado, no el de entrar.
+{% endcomment %}
+
+{% block contenido %}
+<div class="acceso">
+  <input class="sr-only acceso__modo" type="radio" name="acceso-modo" id="acceso-entrar"
+         {% if modo != 'registro' %}checked{% endif %}>
+  <input class="sr-only acceso__modo" type="radio" name="acceso-modo" id="acceso-registro"
+         {% if modo == 'registro' %}checked{% endif %}>
+
+  <div class="acceso__tarjeta">
+    {# El panel de color. Es un círculo enorme: solo se ve el trozo que entra. #}
+    <span class="acceso__panel" aria-hidden="true"></span>
+
+    {# En el móvil el panel no cabe, así que el cambio son dos pestañas. #}
+    <div class="acceso__pestanas">
+      <label class="acceso__pestana" for="acceso-entrar">Iniciar sesión</label>
+      <label class="acceso__pestana" for="acceso-registro">Crear cuenta</label>
+    </div>
+
+    {# ------------------------------ Entrar ------------------------------ #}
+    <div class="acceso__lado acceso__lado--entrar">
+      <form method="post" action="{% url 'entrar' %}" novalidate class="acceso__formulario">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next }}">
+
+                <span class="acceso__marca"><img src="{% static 'img/logo.png' %}" alt="">Campus Seguro</span>
+
+        <p class="acceso__titulo">Iniciar sesión</p>
+        <p class="acceso__ayuda">Entra con el correo de tu cuenta.</p>
+
+        {% comment %}
+        Los avisos que llegan hasta aquí -"Cuenta creada. Ya puedes entrar."-.
+        Antes esta pantalla no los mostraba y el aviso esperaba a la siguiente:
+        salía en el inicio, DESPUÉS de haber entrado.
+        {% endcomment %}
+        {% for m in messages %}<p class="mensaje {{ m.tags }}">{{ m }}</p>{% endfor %}
+
+        {% comment %}
+        El error es a propósito vago: no dice si falló el correo o la
+        contraseña. Decirlo regalaría una forma de averiguar qué correos
+        tienen cuenta aquí, probando uno a uno.
+        {% endcomment %}
+        {% if formulario_entrar.non_field_errors %}
+          <p class="mensaje error">El correo o la contraseña no coinciden.</p>
+        {% endif %}
+
+        {% include '_campo.html' with campo=formulario_entrar.username %}
+        {% include '_campo.html' with campo=formulario_entrar.password %}
+
+        {% comment %}
+        Este enlace no estaba, y era a proposito: mientras no hubo correo
+        configurado llevaba a una pantalla que prometia un mensaje que no
+        salia de la maquina. Ya sale.
+        {% endcomment %}
+        <p class="acceso__olvide"><a href="{% url 'clave-pedir' %}">¿Olvidaste tu contraseña?</a></p>
+
+        <button type="submit">Entrar</button>
+
+        <p class="acceso__descargo">
+          Información reportada por la comunidad. Campus Seguro no detecta
+          peligro ni garantiza seguridad física.
+        </p>
+      </form>
+    </div>
+
+    {# ----------------------------- Registro ----------------------------- #}
+    <div class="acceso__lado acceso__lado--registro">
+      <form method="post" action="{% url 'registro' %}" novalidate class="acceso__formulario">
+        {% csrf_token %}
+
+                <span class="acceso__marca"><img src="{% static 'img/logo.png' %}" alt="">Campus Seguro</span>
+
+        <p class="acceso__titulo">Crear cuenta</p>
+        <p class="acceso__ayuda">Tu cuenta queda como estudiante del campus que elijas.</p>
+
+        {% comment %}
+        El campus va en el mismo cajon que las categorias de un reporte:
+        es una lista de nombres largos, y en el desplegable del sistema
+        salen cortados a la mitad.
+        {% endcomment %}
+        {% for campo in formulario_registro %}
+          {% if campo.name == 'campus' %}
+            <div data-selector>
+              <div data-sin-js>{% include '_campo.html' with campo=campo %}</div>
+            </div>
+          {% else %}
+            {% include '_campo.html' with campo=campo %}
+          {% endif %}
+        {% endfor %}
+
+        <button type="submit">Crear cuenta</button>
+
+        <p class="acceso__ayuda">
+          Tu ubicación solo se comparte durante un viaje activo y deja de
+          compartirse en cuanto confirmas que llegaste.
+        </p>
+
+        <p class="acceso__descargo">
+          Información reportada por la comunidad. Campus Seguro no detecta
+          peligro ni garantiza seguridad física.
+        </p>
+      </form>
+    </div>
+
+    {# --------------------------- Invitaciones --------------------------- #}
+    {# Lo que se ve encima del panel de color, y cambia con él. #}
+    <div class="acceso__invitacion acceso__invitacion--registro">
+      <p class="acceso__invitacion-titulo">¿Primera vez aquí?</p>
+
+      <ul class="acceso__puntos">
+        <li>{% include '_icono.html' with nombre='condiciones_registradas' %}<span><b>Infórmate antes de salir.</b> Consulta las condiciones registradas por la comunidad.</span></li>
+        <li>{% include '_icono.html' with nombre='dos_pines' %}<span><b>Muévete acompañado.</b> Comparte tu ubicación solo mientras dura el trayecto.</span></li>
+        <li>{% include '_icono.html' with nombre='mapa' %}<span><b>Avisa que llegaste.</b> Al confirmar, la ubicación deja de compartirse.</span></li>
+      </ul>
+
+      <label class="acceso__boton" for="acceso-registro" role="button" tabindex="0">Crear cuenta</label>
+    </div>
+
+    <div class="acceso__invitacion acceso__invitacion--entrar">
+      <p class="acceso__invitacion-titulo">¿Ya tienes cuenta?</p>
+      <p class="acceso__invitacion-texto">Inicia sesión para seguir con tus viajes y tus reportes.</p>
+      <label class="acceso__boton" for="acceso-entrar" role="button" tabindex="0">Iniciar sesión</label>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

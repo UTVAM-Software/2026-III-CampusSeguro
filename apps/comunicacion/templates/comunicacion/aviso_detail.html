@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load fechas %}
+
+{% comment %}
+El detalle de un aviso del campus.
+
+Un aviso caducado se sigue pudiendo abrir -puede llegar un enlace viejo-,
+pero lo dice arriba del todo. Enseñarlo igual que uno de hoy sería dar por
+vigente algo que ya no lo está, y la gente toma decisiones con esto.
+{% endcomment %}
+
+{% block volver %}<a class="atras" href="{% url 'aviso-list' %}">← Volver a avisos</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre='notificacion' %}{{ object.titulo }}</h1>
+    {% include '_insignia.html' with texto=object.get_nivel_display tono=object.tono_nivel %}
+  </div>
+  <p class="cabecera__meta">
+    {{ object.campus }} · publicado {{ object.fecha_publicacion|hace }}
+    {% if object.autor %} por {{ object.autor }}{% endif %}
+  </p>
+</header>
+
+{% if not object.esta_vigente %}
+  <div class="aviso atencion" role="status">
+    <span class="aviso__icono" aria-hidden="true">⏱</span>
+    <div>
+      <p class="aviso__titulo">Este aviso ya no está vigente</p>
+      <p>
+        {% if object.fecha_expiracion %}
+          Caducó el {{ object.fecha_expiracion|date:"d/m/Y" }}.
+        {% else %}
+          Quien administra lo dio de baja.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+{% endif %}
+
+<div class="tarjeta">
+  <p>{{ object.contenido|linebreaksbr }}</p>
+</div>
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Ficha del aviso</h2>
+  <dl class="datos-lista">
+    <dt>Campus</dt><dd>{{ object.campus }}</dd>
+    <dt>Nivel</dt><dd>{{ object.get_nivel_display }}</dd>
+    <dt>Publicado</dt><dd>{{ object.fecha_publicacion|date:"d/m/Y H:i" }}</dd>
+    <dt>Caduca</dt>
+    <dd>{% if object.fecha_expiracion %}{{ object.fecha_expiracion|date:"d/m/Y" }}{% else %}Sin fecha de fin{% endif %}</dd>
+  </dl>
+</div>
+
+{% comment %}
+Editar y eliminar viven aqui y no en la lista: en una fila con tres enlaces,
+el dedo acierta el que no era. Aqui ya estas mirando ESTE registro.
+{% endcomment %}
+{% if perms.comunicacion.change_aviso or perms.comunicacion.delete_aviso %}
+<div class="acciones">
+  {% if perms.comunicacion.change_aviso %}<a class="boton secundario" href="{% url 'aviso-update' object.pk %}">Editar</a>{% endif %}
+  {% if perms.comunicacion.delete_aviso %}<a class="boton secundario quitar" href="{% url 'aviso-delete' object.pk %}">Eliminar</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

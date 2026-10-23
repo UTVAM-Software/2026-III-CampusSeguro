@@ -1,0 +1,34 @@
+{% load static %}{% comment %}
+El marco de la pantalla de acceso.
+
+No extiende base.html: esa plantilla lleva la barra con cinco enlaces que
+piden sesión, y enseñárselos a quien todavía no ha entrado es ofrecer cinco
+puertas que se cierran en la cara.
+{% endcomment %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block titulo %}Acceder{% endblock %} · Campus Seguro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v={{ VERSION_CSS }}">
+  {% include '_favicon.html' %}
+</head>
+<body class="pagina-acceso">
+  <div class="marco-acceso">
+    {% comment %}
+    La marca no va en una cabecera propia: va dentro del lado blanco de la
+    tarjeta. Ese lado cambia de columna segun el modo, y es el unico que
+    siempre esta sobre fondo claro; una cabecera fija acabaria con el
+    logotipo azul encima del panel azul la mitad del tiempo.
+    {% endcomment %}
+    <main>{% block contenido %}{% endblock %}</main>
+  </div>
+
+  {% comment %}
+  El cajon que sustituye al desplegable del campus. Si no carga, queda el
+  <select> de siempre y la cuenta se crea igual.
+  {% endcomment %}
+  <script src="{% static 'js/selector.js' %}?v={{ VERSION_CSS }}" defer></script>
+</body>
+</html>

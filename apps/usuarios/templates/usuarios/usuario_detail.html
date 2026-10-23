@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% comment %}
+La ficha de una cuenta.
+
+Es la pantalla a la que lleva el avatar de la lateral, así que casi siempre
+es la cuenta de quien la mira: su perfil. También es la ficha que abre quien
+administra desde la lista de cuentas, y por eso el texto distingue las dos
+cosas en vez de tutear siempre.
+{% endcomment %}
+
+{% block volver %}
+  {% if perms.usuarios.administrar_sistema and object.pk != user.pk %}
+    <a class="atras" href="{% url 'usuario-list' %}">← Volver a cuentas</a>
+  {% else %}
+    <a class="atras" href="{% url 'index' %}">← Volver al inicio</a>
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_avatar.html' with usuario=object %}{{ object.nombre }} {{ object.apellidos }}</h1>
+    {% if object.activo %}
+      {% include '_insignia.html' with texto=object.get_rol_display %}
+    {% else %}
+      {% include '_insignia.html' with texto='Sin acceso' tono='apagada' %}
+    {% endif %}
+  </div>
+  <p class="cabecera__meta">
+    {% if object.campus %}{{ object.campus }} · {% endif %}
+    con cuenta desde {{ object.fecha_registro|date:"d/m/Y" }}
+  </p>
+</header>
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Datos de la cuenta</h2>
+  <dl class="datos-lista">
+    <dt>Correo</dt><dd>{{ object.correo }}</dd>
+    <dt>Teléfono</dt><dd>{% if object.telefono %}{{ object.telefono }}{% else %}—{% endif %}</dd>
+    <dt>Rol</dt><dd>{{ object.get_rol_display }}</dd>
+    <dt>Campus</dt><dd>{% if object.campus %}{{ object.campus }}{% else %}Sin campus{% endif %}</dd>
+  </dl>
+</div>
+
+{% comment %}
+Los grupos y permisos de Django de la cuenta. Solo los ve la
+superadministración, que es quien los reparte.
+{% endcomment %}
+{% if perms.usuarios.administrar_sistema %}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Grupos y permisos</h2>
+  <dl class="datos-lista">
+    <dt>Grupos</dt>
+    <dd>
+      {% for g in object.groups.all %}<a href="{% url 'grupo-detail' g.pk %}">{{ g.name }}</a>{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+    </dd>
+    <dt>Permisos sueltos</dt>
+    <dd>
+      {% for p in object.user_permissions.all %}{{ p.name }}{% if not forloop.last %}, {% endif %}{% empty %}—{% endfor %}
+    </dd>
+    <dt>Acceso a /admin/</dt><dd>{{ object.is_staff|yesno:"Sí,No" }}</dd>
+  </dl>
+</div>
+{% endif %}
+
+{% comment %}
+Para qué sirve el teléfono. Lo pide el formulario de registro y nadie dice
+nunca quién va a verlo: aquí se dice, y se dice que es opcional.
+{% endcomment %}
+<div class="aviso" role="status">
+  <span class="aviso__icono" aria-hidden="true">i</span>
+  <div>
+    <p class="aviso__titulo">Quién ve tu teléfono</p>
+    <p>
+      Solo quien aceptaste que te acompañe, y solo mientras ese viaje esté en
+      curso. Puedes dejarlo vacío.
+    </p>
+  </div>
+</div>
+
+<div class="acciones">
+  <a class="boton secundario" href="{% url 'usuario-update' object.pk %}">Editar</a>
+  {% if perms.usuarios.delete_usuario %}
+    <a class="boton secundario quitar" href="{% url 'usuario-delete' object.pk %}">Eliminar</a>
+  {% endif %}
+</div>
+
+{% comment %}
+Cerrar sesión no está aquí: está en la lateral y en la cabecera del móvil,
+donde está siempre. Tenerlo también en el perfil era un tercer sitio donde
+buscarlo.
+{% endcomment %}
+{% endblock %}

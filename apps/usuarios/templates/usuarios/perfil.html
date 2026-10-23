@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+
+{% comment %}
+El perfil.
+
+DOS SECCIONES, UNA AL LADO DE OTRA
+    A la izquierda las secciones, a la derecha la que esté abierta. En el
+    teléfono las secciones pasan arriba, en fila.
+
+    El cambio de sección es CSS: dos radios escondidos delante y reglas que
+    miran cuál está marcado. Sin una línea de JavaScript, y el teclado se
+    mueve entre ellas con las flechas porque son un grupo de radios de
+    verdad.
+
+    Cuál llega marcada lo decide el servidor (`seccion_perfil`), para que al
+    guardar no se vuelva a la primera dejando el "listo" donde nadie mira.
+{% endcomment %}
+
+{% block content %}
+<h1>Perfil</h1>
+
+<div class="ajustes">
+  <input type="radio" name="ajustes" id="ajustes-datos" class="sr-only"
+         {% if seccion_perfil != 'seguridad' %}checked{% endif %}>
+  <input type="radio" name="ajustes" id="ajustes-seguridad" class="sr-only"
+         {% if seccion_perfil == 'seguridad' %}checked{% endif %}>
+
+  <nav class="ajustes__pestanas" aria-label="Secciones del perfil">
+    <label class="ajustes__pestana" for="ajustes-datos">
+      {% include '_icono.html' with nombre='perfil' %}<span>Tus datos</span>
+    </label>
+    <label class="ajustes__pestana" for="ajustes-seguridad">
+      {% include '_icono.html' with nombre='escudo' %}<span>Seguridad</span>
+    </label>
+  </nav>
+
+  {# =============================== Tus datos ============================== #}
+  <section class="ajustes__panel" data-panel="datos" aria-labelledby="titulo-datos">
+    <header class="ajustes__cabecera">
+      <h2 id="titulo-datos">Tus datos</h2>
+      <p>Tu foto y cómo te ve el resto de tu campus.</p>
+    </header>
+
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+
+      {% comment %}
+      El campo de archivo va escondido detrás de la etiqueta, que es la que
+      se ve. Es un `<label for>`, así que abre el diálogo por sí solo y el
+      teclado llega a él: un `<div>` con un click encima no daría ninguna de
+      las dos cosas.
+      {% endcomment %}
+      <div class="campo">
+        <div class="retrato">
+          {% include '_avatar.html' with usuario=user clases='avatar--grande' %}
+
+          <div class="retrato__acciones">
+            <label class="retrato__elegir" for="{{ form.foto.id_for_label }}">
+              {% if user.foto %}Cambiar foto{% else %}Subir una foto{% endif %}
+            </label>
+            <small class="campo__ayuda">{{ form.foto.help_text }}</small>
+          </div>
+        </div>
+
+        <div class="sr-only">{{ form.foto }}</div>
+        {% for error in form.foto.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+      </div>
+
+      {% comment %}
+      El nombre, el correo y el campus se ven pero no se tocan: el correo
+      identifica la cuenta y el campus decide qué reportes y qué avisos ves.
+      Se enseñan igualmente porque es lo primero que alguien viene a
+      comprobar a esta pantalla.
+      {% endcomment %}
+      <div class="ajustes__rejilla">
+        <div class="ficha-dato">
+          <span class="ficha-dato__etiqueta">Nombre</span>
+          <span class="ficha-dato__valor">{{ user.nombre }} {{ user.apellidos }}</span>
+        </div>
+        <div class="ficha-dato">
+          <span class="ficha-dato__etiqueta">Rol</span>
+          <span class="ficha-dato__valor">{{ user.get_rol_display }}</span>
+        </div>
+        <div class="ficha-dato ficha-dato--ancho">
+          <span class="ficha-dato__etiqueta">Correo</span>
+          <span class="ficha-dato__valor">{{ user.correo }}</span>
+        </div>
+        <div class="ficha-dato ficha-dato--ancho">
+          <span class="ficha-dato__etiqueta">Campus</span>
+          <span class="ficha-dato__valor">
+            {% if user.campus %}{{ user.campus.nombre }}{% else %}Sin asignar{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <p class="campo__ayuda">
+        El nombre, el correo y el campus los cambia la administración de tu
+        campus, no tú. Tu cuenta es del {{ user.fecha_registro|date:"d/m/Y" }}.
+      </p>
+
+      {% include '_campo.html' with campo=form.telefono %}
+
+      <button type="submit">Guardar cambios</button>
+    </form>
+  </section>
+
+  {# =============================== Seguridad ============================= #}
+  <section class="ajustes__panel" data-panel="seguridad" aria-labelledby="titulo-seguridad">
+    <header class="ajustes__cabecera">
+      <h2 id="titulo-seguridad">Seguridad</h2>
+      <p>Tu contraseña, dónde está abierta tu cuenta y qué se comparte de ti.</p>
+    </header>
+
+    {% comment %}
+    EL PROYECTO VIEJO CAMBIABA LA CONTRASEÑA POR CORREO; AQUÍ NO
+
+    Allí este bloque decía "te llega un enlace a tu correo". Aquí no hay
+    servidor de correo configurado, así que copiar ese texto sería prometer
+    un mensaje que no sale de la máquina: nadie podría cambiarla nunca.
+
+    Se pide la actual, que además es más seguro: quien encuentre un teléfono
+    desbloqueado con la sesión abierta no puede cambiarla sin saberla. Por
+    correo, esa misma persona pide el enlace y lo abre en ese mismo teléfono.
+    {% endcomment %}
+    <div class="ajustes__bloque">
+      <h3 class="ajustes__titulo">Tu contraseña</h3>
+      <p class="ajustes__texto">
+        Para cambiarla hay que saber la actual. Así, quien encuentre tu
+        teléfono con la sesión abierta no puede dejarte fuera de tu cuenta.
+      </p>
+      <a class="boton secundario" href="{% url 'cambiar-clave' %}">Cambiar contraseña</a>
+    </div>
+
+    <div class="ajustes__bloque">
+      <h3 class="ajustes__titulo">Sesiones abiertas</h3>
+      <p class="ajustes__texto">
+        {% if sesiones_abiertas %}
+          Además de este, tu cuenta está abierta en
+          <strong>{{ sesiones_abiertas }}</strong>
+          dispositivo{{ sesiones_abiertas|pluralize }} más.
+        {% else %}
+          Tu cuenta solo está abierta en este dispositivo.
+        {% endif %}
+      </p>
+
+      <form method="post" action="{% url 'cerrar-otras-sesiones' %}">
+        {% csrf_token %}
+        <button type="submit" class="boton secundario"
+                {% if not sesiones_abiertas %}disabled{% endif %}>
+          Cerrar sesión en los demás dispositivos
+        </button>
+      </form>
+    </div>
+
+    <div class="ajustes__bloque">
+      <h3 class="ajustes__titulo">Tu ubicación</h3>
+      <p class="ajustes__texto">
+        Campus Seguro comparte tu ubicación
+        <strong>únicamente durante un viaje en curso</strong>
+        y solo con los acompañantes que tú elijas. No hay rastreo permanente
+        ni historial de tus recorridos.
+      </p>
+    </div>
+  </section>
+</div>
+{% endblock %}

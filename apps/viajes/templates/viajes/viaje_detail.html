@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static fechas %}
+
+{% comment %}
+El detalle de un viaje.
+
+Era la lista de campos del modelo, uno por parrafo. Lo que hace falta mirar
+aqui no es el contenido de la tabla: es en que punto esta el viaje y que se
+puede hacer ahora. Por eso la pantalla cambia de forma segun el estado, y en
+cada uno ensena solo lo que tiene sentido en ese momento.
+
+LO QUE SE ENSENA NO ES LO QUE AUTORIZA
+    `es_viajero` decide que botones se dibujan, pero quien escriba la
+    direccion a mano se encuentra el 404 que pone la vista. Esconder un boton
+    no protege nada.
+{% endcomment %}
+
+{% block volver %}<a class="atras" href="{% url 'viaje-list' %}">← Volver a viajes</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre='viajes' %}{{ object.destino }}</h1>
+    {% include '_insignia.html' with texto=object.get_estado_display tono=object.tono_estado %}
+  </div>
+  <p class="cabecera__meta">
+    {% if es_viajero %}Tu viaje{% else %}Viaje de {{ object.usuario }}{% endif %}
+    · desde {{ object.origen }} · empezó {{ object.fecha_inicio|hace }}
+  </p>
+</header>
+
+{% comment %}
+El telefono de quien viaja, para quien lo acompana. Solo mientras el viaje
+siga en curso: cuando termina, acompanar deja de dar derecho a nada.
+{% endcomment %}
+{% if not es_viajero and object.esta_en_curso and object.usuario.telefono %}
+  <a class="boton secundario bloque" href="tel:{{ object.usuario.telefono }}">
+    {% include '_icono.html' with nombre='perfil' %}
+    Llamar a {{ object.usuario.nombre }} · {{ object.usuario.telefono }}
+  </a>
+{% endif %}
+
+{# ==================== Según en qué punto está el viaje ==================== #}
+
+{% if object.estado == 'llego_bien' %}
+  <div class="tarjeta">
+    {% if es_viajero %}
+      {% include '_estado_vacio.html' with icono='viajes' titulo='Llegaste bien' texto='Tu ubicación dejó de compartirse.' only %}
+    {% else %}
+      {% include '_estado_vacio.html' with icono='viajes' titulo='Llegó bien' texto='Confirmó su llegada y la ubicación dejó de compartirse.' only %}
+    {% endif %}
+  </div>
+
+{% elif object.estado == 'cancelado' %}
+  <div class="aviso" role="status">
+    <span class="aviso__icono" aria-hidden="true">✕</span>
+    <div>
+      <p class="aviso__titulo">Viaje cancelado</p>
+      <p>La ubicación dejó de compartirse.</p>
+    </div>
+  </div>
+
+{% elif object.estado == 'alerta' %}
+  {% comment %}
+  Dice que el tiempo se acabó, no que haya pasado algo. Esta aplicación no
+  sabe si alguien está en peligro, y escribirlo aquí sería afirmarlo.
+  {% endcomment %}
+  <div class="aviso atencion" role="status">
+    <span class="aviso__icono" aria-hidden="true">⏱</span>
+    <div>
+      <p class="aviso__titulo">Se pasó la hora límite del viaje</p>
+      <p>
+        {% if es_viajero %}
+          Avisa de tu estado si sigues en camino.
+        {% else %}
+          Todavía no ha confirmado su llegada.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+{% else %}
+  <div class="tarjeta">
+    <div class="datos">
+      {% comment %}
+      Sin hora limite el numero se apaga: es la ausencia de un dato, y darle
+      el mismo peso que a "12 min" seria anunciar a gritos que no hay nada.
+      {% endcomment %}
+      {% if object.minutos_restantes is not None %}
+        <div class="dato">
+          <p class="dato__valor">{{ object.minutos_restantes }} min</p>
+          <p class="dato__etiqueta">Tiempo restante</p>
+        </div>
+      {% else %}
+        <div class="dato apagado">
+          <p class="dato__valor dato__valor--chico">Sin hora límite</p>
+          <p class="dato__etiqueta">Nadie recibirá aviso si no llegas</p>
+        </div>
+      {% endif %}
+      <div class="dato">
+        <p class="dato__valor">{{ object.acompanantes_aceptados.count }}</p>
+        <p class="dato__etiqueta">Acompañantes</p>
+      </div>
+    </div>
+
+    {% comment %}
+    Lo que dice esta caja lo va cambiando el guion: si diste permiso de
+    ubicación, si no lo diste, cuándo fue la última posición. El texto de
+    partida es el que se ve sin JavaScript, y por eso no promete nada.
+    {% endcomment %}
+    <div class="aviso" role="status">
+      <span class="aviso__icono" aria-hidden="true">◎</span>
+      <div>
+        {% if es_viajero %}
+          <p class="aviso__titulo" data-envio-titulo>Compartiendo tu ubicación</p>
+        {% else %}
+          <p class="aviso__titulo" data-envio-titulo>Siguiendo el viaje</p>
+        {% endif %}
+        <p data-envio-texto>
+          {% if ultima_ubicacion %}
+            Última posición registrada {{ ultima_ubicacion.fecha_registro|hace }}.
+          {% else %}
+            Todavía no hay ninguna posición registrada.
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+    {% comment %}
+    El guion solo manda mientras esta pestaña esté abierta. Hay que decirlo:
+    alguien podría estar contando con que sigue avisando con el móvil en el
+    bolsillo y la pantalla apagada, y no es así.
+    {% endcomment %}
+    {% if es_viajero %}
+      <p class="campo__ayuda">
+        Se comparte solo mientras tengas esta pantalla abierta, y deja de
+        compartirse en cuanto marques que llegaste.
+      </p>
+    {% endif %}
+  </div>
+
+  {% if es_viajero %}
+    <form class="suelto" method="post" action="{% url 'viaje-llegue' object.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="exito bloque">✓ Llegué bien</button>
+    </form>
+    <form class="suelto" method="post" action="{% url 'viaje-cancelar' object.pk %}">
+      {% csrf_token %}
+      <button type="submit" class="boton secundario bloque">Cancelar viaje</button>
+    </form>
+  {% endif %}
+{% endif %}
+
+{# ============================== Acompañantes ============================== #}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Acompañantes</h2>
+
+  {% if object.acompanantes.exists %}
+    <ul class="lista-llana">
+      {% for a in object.acompanantes.all %}
+        <li>
+          <span>{{ a.acompanante }}</span>
+          {% include '_insignia.html' with texto=a.get_estado_display tono=a.tono_estado %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="ficha__meta">Todavía no has invitado a nadie.</p>
+  {% endif %}
+
+  {% if es_viajero %}
+    <div class="acciones">
+      <a class="boton secundario" href="{% url 'acompanante-create' %}">Invitar a alguien</a>
+      <a class="boton secundario" href="{% url 'acompanante-list' %}">Ver todas las invitaciones</a>
+    </div>
+  {% endif %}
+</div>
+
+{# ================================ El viaje ================================ #}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">El trayecto</h2>
+  <dl class="datos-lista">
+    <dt>Origen</dt><dd>{{ object.origen }}</dd>
+    <dt>Destino</dt><dd>{{ object.destino }}</dd>
+    <dt>Empezó</dt><dd>{{ object.fecha_inicio|date:"d/m/Y H:i" }}</dd>
+    {% if object.fecha_expiracion %}
+      <dt>Hora límite</dt><dd>{{ object.fecha_expiracion|date:"d/m/Y H:i" }}</dd>
+    {% endif %}
+    {% if object.fecha_fin %}
+      <dt>Terminó</dt><dd>{{ object.fecha_fin|date:"d/m/Y H:i" }}</dd>
+    {% endif %}
+  </dl>
+
+  {% comment %}
+  Por dónde pasó. Es lo más delicado que guarda el sistema, y se llega desde
+  aquí: desde el viaje al que pertenece, no desde un menú suelto.
+  {% endcomment %}
+  <div class="acciones">
+    <a class="boton secundario" href="{% url 'ubicacion-list' %}">Ubicaciones registradas</a>
+  </div>
+</div>
+
+{% comment %}
+Editar y eliminar viven aqui y no en la lista: en una fila con tres enlaces,
+el dedo acierta el que no era. Aqui ya estas mirando ESTE registro.
+{% endcomment %}
+{% if es_viajero %}
+<div class="acciones">
+  <a class="boton secundario" href="{% url 'viaje-update' object.pk %}">Editar</a>
+  <a class="boton secundario quitar" href="{% url 'viaje-delete' object.pk %}">Eliminar</a>
+</div>
+{% endif %}
+
+<p class="descargo">
+  Quien te acompaña ve este viaje solo mientras esté en curso. No ve tus
+  viajes anteriores ni tu ubicación fuera de él.
+</p>
+{% endblock %}
+
+{% block extra_scripts %}
+  {% if object.esta_en_curso %}
+    {{ config_viaje|json_script:"config-viaje" }}
+    <script src="{% static 'js/viaje.js' %}?v={{ VERSION_CSS }}" defer></script>
+  {% endif %}
+{% endblock %}

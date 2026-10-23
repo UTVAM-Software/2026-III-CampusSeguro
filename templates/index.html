@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% load static fechas %}
+{% block volver %}{% endblock %}
+
+{% comment %}
+El inicio.
+
+Primero la acción del producto —"¿A dónde vas?"— y debajo lo que esa persona
+necesita saber al abrir: si tiene un viaje en curso, qué avisó su campus, qué
+se ha reportado cerca y dónde hay ayuda.
+
+CADA BLOQUE TRAE DATOS DE VERDAD O SU HUECO
+    Ninguno inventa contenido para que la pantalla se vea llena. Si no hay
+    reportes, lo dice; si no hay puntos de apoyo, lo dice. Una pantalla que
+    finge tener datos es peor que una vacía: quien la mira se fía.
+
+AQUÍ HABÍA UN "TODO LO DEMÁS" CON NUEVE BOTONES
+    Era el directorio de la aplicación pegado al final del inicio, y no está
+    en el proyecto viejo. Lo quité, pero las cinco secciones que colgaban de
+    él no se quedaron sin puerta: cada una está ahora donde le toca —las
+    confirmaciones en la lista de reportes, los acompañantes y las
+    ubicaciones en el detalle del viaje, los avisos en las notificaciones y
+    los campus en los puntos de apoyo—.
+
+    Una prueba comprueba que ninguna lista se queda sin un enlace que lleve
+    a ella: quitar el menú es fácil, dejar una sección huérfana también.
+{% endcomment %}
+
+{% block content %}
+<header class="saludo">
+  <p class="saludo__hola">Hola,</p>
+  <h1 class="saludo__nombre">{{ user.nombre }}</h1>
+  {# El campus solo en el teléfono: en escritorio ya está en la lateral. #}
+  {% if user.campus %}<p class="saludo__campus">{{ user.campus }}</p>{% endif %}
+</header>
+
+{# --------------------------- La acción principal ------------------------ #}
+<div class="tarjeta destacada">
+  <h2>¿A dónde vas?</h2>
+  <p class="destacada__texto">
+    Planifica tu trayecto y consulta las condiciones registradas en el camino.
+  </p>
+  <div class="destacada__botones">
+    <a class="boton destacada__principal" href="{% url 'viaje-create' %}">Planificar viaje</a>
+    <a class="boton destacada__secundario" href="{% url 'acompanante-list' %}">Acompáñame</a>
+  </div>
+</div>
+
+<div class="accesos">
+  <a class="boton secundario" href="{% url 'mapa' %}">
+    {% include '_icono.html' with nombre='lupa_mapa' %} Ver el mapa
+  </a>
+  <a class="boton secundario" href="{% url 'reporte-create' %}">
+    {% include '_icono.html' with nombre='reportar' %} Reportar situación
+  </a>
+</div>
+
+{# ------------------------------- Avisos --------------------------------- #}
+{% if avisos %}
+  <section class="seccion" aria-labelledby="titulo-avisos">
+    <h2 id="titulo-avisos">Avisos del campus</h2>
+
+    {% comment %}
+    El tono sale de `tono_nivel`, el mismo que usa la insignia. Un nombre de
+    tono, dos componentes: así un nivel nuevo no puede salir de un color en
+    la lista y de otro aquí.
+    {% endcomment %}
+    {% for aviso in avisos %}
+      <a class="aviso {{ aviso.tono_nivel }}" href="{{ aviso.get_absolute_url }}">
+        <span class="aviso__icono" aria-hidden="true">{% if aviso.nivel == 'urgente' %}⚠{% else %}i{% endif %}</span>
+        <span>
+          <span class="aviso__titulo">{{ aviso.titulo }}</span>
+          <span class="aviso__cuerpo">{{ aviso.contenido }}</span>
+        </span>
+      </a>
+    {% endfor %}
+  </section>
+{% endif %}
+
+{# ---------------------------- Viajes activos ---------------------------- #}
+{% comment %}
+Entra el viaje propio en curso y los que esta persona acompaña. Dejar fuera
+los que acompañas de una tarjeta titulada "Viajes activos" sería mentir: hay
+alguien contando contigo ahora mismo.
+{% endcomment %}
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Viajes activos</h2>
+
+  {% if viaje_en_curso or acompanamientos %}
+    <ul class="fichas fichas--dentro">
+      {% if viaje_en_curso %}
+        <li>
+          <a class="ficha" href="{{ viaje_en_curso.get_absolute_url }}">
+            <span class="ficha__cabecera">
+              <span class="ficha__titulo">
+                {% include '_icono.html' with nombre='viajes' %}Vas a {{ viaje_en_curso.destino }}
+              </span>
+              {% include '_insignia.html' with texto=viaje_en_curso.get_estado_display tono=viaje_en_curso.tono_estado %}
+            </span>
+            <p class="ficha__meta">Desde {{ viaje_en_curso.origen }} · empezó {{ viaje_en_curso.fecha_inicio|hace }}</p>
+          </a>
+        </li>
+      {% endif %}
+      {% for a in acompanamientos %}
+        <li>
+          <a class="ficha" href="{{ a.viaje.get_absolute_url }}">
+            <span class="ficha__cabecera">
+              <span class="ficha__titulo">
+                {% include '_icono.html' with nombre='perfil' %}Acompañas a {{ a.viaje.usuario }}
+              </span>
+              {% include '_insignia.html' with texto='Acompañando' %}
+            </span>
+            <p class="ficha__meta">Hacia {{ a.viaje.destino }}</p>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    {% url 'viaje-create' as ir_a_planificar %}
+    {% include '_estado_vacio.html' with icono='viajes' titulo='No tienes viajes en curso' texto='Planifica un trayecto y comparte tu ubicación con quien tú elijas mientras dure.' accion_url=ir_a_planificar accion_texto='Planificar viaje' only %}
+  {% endif %}
+</div>
+
+{# ------------------------ Condiciones registradas ----------------------- #}
+<section class="seccion" aria-labelledby="titulo-condiciones">
+  <h2 id="titulo-condiciones">Condiciones registradas cerca</h2>
+
+  {% if reportes %}
+    <ul class="fichas">
+      {% for r in reportes %}
+        <li>
+          <a class="ficha" href="{{ r.get_absolute_url }}">
+            <span class="ficha__cabecera">
+              <span class="ficha__titulo">
+                {% include '_icono.html' with nombre=r.icono %}{{ r.get_tipo_display }}
+              </span>
+              {% include '_insignia.html' with texto=r.get_estado_display tono=r.tono_estado %}
+            </span>
+            <p class="ficha__texto">{{ r.descripcion }}</p>
+            <p class="ficha__meta">Registrado {{ r.fecha_creacion|hace }}</p>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    <a class="boton secundario" href="{% url 'reporte-list' %}">Ver todas</a>
+  {% else %}
+    <div class="tarjeta">
+      {% comment %}
+      Sin botón: "Reportar situación" ya está arriba de esta misma pantalla.
+      {% endcomment %}
+      {% include '_estado_vacio.html' with icono='condiciones_registradas' titulo='No hay situaciones registradas en esta zona' texto='Las condiciones que reporte la comunidad de tu campus aparecerán aquí.' only %}
+    </div>
+  {% endif %}
+</section>
+
+{# --------------------------- Puntos de apoyo ---------------------------- #}
+<section class="seccion" aria-labelledby="titulo-puntos">
+  <h2 id="titulo-puntos">Puntos de apoyo</h2>
+
+  {% if puntos %}
+    <ul class="fichas">
+      {% for p in puntos %}
+        <li>
+          <a class="ficha" href="{{ p.get_absolute_url }}">
+            <span class="ficha__cabecera">
+              <span class="ficha__titulo">
+                {% include '_icono.html' with nombre=p.icono %}{{ p.nombre }}
+              </span>
+              <span class="insignia">{{ p.get_tipo_display }}</span>
+            </span>
+            <p class="ficha__meta">{% if p.horario %}{{ p.horario }}{% else %}Sin horario registrado{% endif %}</p>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+    <a class="boton secundario" href="{% url 'punto-list' %}">Ver todos</a>
+  {% else %}
+    <div class="tarjeta">
+      {% comment %}
+      Sin botón: quien estudia no registra puntos de apoyo, los registra
+      quien administra. Ofrecer aquí esa puerta sería mandar a un 403.
+      {% endcomment %}
+      {% include '_estado_vacio.html' with icono='puntos_apoyo' titulo='Aún no hay puntos de apoyo cargados' texto='Enfermería, vigilancia, recepción y otros módulos de tu campus aparecerán aquí.' only %}
+    </div>
+  {% endif %}
+</section>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block volver %}<a class="atras" href="{% url 'acompanante-list' %}">← Volver a acompañantes</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre='perfil' %}{{ object.acompanante }}</h1>
+    {% include '_insignia.html' with texto=object.get_estado_display tono=object.tono_estado %}
+  </div>
+  <p class="cabecera__meta">En el viaje a {{ object.viaje.destino }}</p>
+</header>
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">La invitación</h2>
+  <dl class="datos-lista">
+    <dt>Viaje</dt>
+    <dd><a href="{% url 'viaje-detail' object.viaje_id %}">{{ object.viaje.origen }} → {{ object.viaje.destino }}</a></dd>
+    <dt>Acompañante</dt><dd>{{ object.acompanante }}</dd>
+    <dt>Estado</dt><dd>{{ object.get_estado_display }}</dd>
+  </dl>
+</div>
+
+{% comment %}
+Quien solo fue invitado y todavia no ha dicho que si no ve nada del viaje.
+Aceptar es lo que abre la puerta, y por eso se dice aqui.
+{% endcomment %}
+{% if object.estado == 'invitado' %}
+  <div class="aviso" role="status">
+    <span class="aviso__icono" aria-hidden="true">i</span>
+    <div>
+      <p class="aviso__titulo">Todavía sin aceptar</p>
+      <p>Mientras no acepte, no ve el viaje ni la ubicación.</p>
+    </div>
+  </div>
+{% endif %}
+
+<div class="acciones">
+  <a class="boton secundario" href="{% url 'acompanante-update' object.pk %}">Editar</a>
+  <a class="boton secundario quitar" href="{% url 'acompanante-delete' object.pk %}">Eliminar</a>
+</div>
+{% endblock %}

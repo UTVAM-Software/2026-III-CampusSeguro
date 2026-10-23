@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% comment %}
+Crear o editar una cuenta. Los campos los decide la vista según quién edita:
+la superadministración ve además el rol, el campus, si la cuenta está
+activa, y sus grupos y permisos de Django.
+{% endcomment %}
+
+{% block content %}
+<h1>{% if object %}Editar cuenta{% else %}Nueva cuenta{% endif %}</h1>
+
+<form method="post" class="formulario">
+  {% csrf_token %}
+  {% for error in form.non_field_errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+
+  {% for campo in form %}
+    {% if campo.name == 'user_permissions' %}
+      {% include '_casillas.html' with campo=campo agrupar=True %}
+    {% elif campo.name == 'groups' %}
+      {% include '_casillas.html' with campo=campo %}
+    {% else %}
+      {% include '_campo.html' with campo=campo %}
+    {% endif %}
+  {% endfor %}
+
+  <button type="submit">Guardar</button>
+</form>
+<a class="boton secundario" href="{% if object %}{{ object.get_absolute_url }}{% else %}{% url 'usuario-list' %}{% endif %}">Cancelar</a>
+{% endblock %}

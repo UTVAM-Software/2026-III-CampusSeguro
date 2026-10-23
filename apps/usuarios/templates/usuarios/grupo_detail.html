@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+
+{% block volver %}<a class="atras" href="{% url 'grupo-list' %}">← Volver a grupos</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{{ object.name }}</h1>
+    {% if es_de_rol %}{% include '_insignia.html' with texto='Grupo de rol' %}{% endif %}
+  </div>
+  <p class="cabecera__meta">
+    {{ miembros|length }} cuenta{{ miembros|length|pluralize }} ·
+    {{ object.permissions.count }} permiso{{ object.permissions.count|pluralize }}
+  </p>
+</header>
+
+{% if es_de_rol %}
+  <div class="aviso" role="status">
+    <span class="aviso__icono" aria-hidden="true">i</span>
+    <div>
+      <p class="aviso__titulo">Es el grupo de un rol</p>
+      <p>
+        Las cuentas entran y salen de él según su campo "Rol". Sus permisos sí
+        se pueden cambiar: eso cambia lo que puede hacer todo ese rol.
+      </p>
+    </div>
+  </div>
+{% endif %}
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Permisos</h2>
+  {% if permisos %}
+    <dl class="datos-lista">
+      {% for modelo, lista in permisos %}
+        <dt>{{ modelo }}</dt>
+        <dd>{% for permiso, etiqueta in lista %}{{ etiqueta }}{% if not forloop.last %}, {% endif %}{% endfor %}</dd>
+      {% endfor %}
+    </dl>
+  {% else %}
+    <p class="campo__ayuda">Este grupo todavía no tiene permisos.</p>
+  {% endif %}
+</div>
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">Cuentas en este grupo</h2>
+  {% if miembros %}
+    <ul class="lista-llana">
+      {% for u in miembros %}
+        <li><a href="{{ u.get_absolute_url }}">{{ u }}</a> <span class="ficha__meta">{{ u.correo }}</span></li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="campo__ayuda">Nadie está en este grupo.</p>
+  {% endif %}
+</div>
+
+<div class="acciones">
+  {% if perms.auth.change_group %}<a class="boton secundario" href="{% url 'grupo-update' object.pk %}">Editar</a>{% endif %}
+  {% if perms.auth.delete_group and not es_de_rol %}
+    <a class="boton secundario quitar" href="{% url 'grupo-delete' object.pk %}">Eliminar</a>
+  {% endif %}
+</div>
+{% endblock %}

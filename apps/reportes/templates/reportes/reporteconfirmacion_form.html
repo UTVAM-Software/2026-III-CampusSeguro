@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>Confirmación de reporte</h1>
+
+{% comment %}
+Aquí había un desplegable de "Usuario" y un script que escondía de él al autor
+del reporte elegido. Ya no hace falta ninguno de los dos: quien responde es
+quien tiene la sesión abierta, y la lista de reportes llega del servidor ya
+sin los suyos.
+{% endcomment %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Guardar</button>
+</form>
+<a class="boton secundario" href="{% url 'confirmacion-list' %}">Cancelar</a>
+{% endblock %}

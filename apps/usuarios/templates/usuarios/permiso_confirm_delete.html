@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<h1>¿Eliminar el permiso "{{ object.name }}"?</h1>
+
+<p class="mensaje">
+  Se le quita a todos los grupos y cuentas que lo tengan. Si alguna pantalla
+  lo pide con <code>permission_required</code>, quedará cerrada para todos.
+</p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Sí, eliminar</button>
+</form>
+<a class="boton secundario" href="{% url 'permiso-detail' object.pk %}">Cancelar</a>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% load static fechas %}{% comment %}
+La campana, con su panel de avisos.
+
+    {% include '_campana.html' with clases='campana--oscura' %}
+
+ES UN <details> DEL NAVEGADOR
+    Abrirlo y cerrarlo con su propio botón lo hace el navegador, sin una
+    línea de JavaScript. El guion (static/js/campana.js) solo añade lo que a
+    un `<details>` le falta para portarse como un menú: cerrarse al pulsar
+    fuera y con Escape. Si ese guion no carga, el panel sigue funcionando.
+
+POR QUÉ NO ES UN ENLACE A LA BANDEJA
+    Lo era, y mandaba a otra pantalla para contestar "¿hay algo nuevo?". La
+    respuesta casi siempre es "no", así que te sacaba de donde estabas para
+    nada y luego había que volver. Así se mira sin moverse, y si hay algo que
+    leer, "Ver todas" lleva a la bandeja.
+
+EL NÚMERO NO ES SOLO COLOR
+    Dentro del botón va el texto para quien usa lector de pantalla —"3 sin
+    leer"—, porque un punto rojo a secas no se lee.
+{% endcomment %}
+<details class="campana {{ clases }}" data-campana>
+  <summary class="campana__boton" title="Notificaciones">
+    <span class="sr-only">
+      Notificaciones{% if sin_leer %}: {{ sin_leer }} sin leer{% endif %}
+    </span>
+    {% include '_icono.html' with nombre='notificacion' %}
+    {% if sin_leer %}<span class="campana__contador" aria-hidden="true">{{ sin_leer }}</span>{% endif %}
+  </summary>
+
+  {# Atenua y desenfoca lo de atras mientras el panel esta abierto. #}
+  <span class="campana__velo" aria-hidden="true"></span>
+
+  <div class="campana__panel">
+    <p class="campana__titulo">Notificaciones</p>
+
+    {% if notificaciones_recientes %}
+      <ul class="campana__lista">
+        {% for n in notificaciones_recientes %}
+          <li>
+            <a class="campana__aviso {% if not n.leida %}campana__aviso--sin-leer{% endif %}"
+               href="{{ n.get_absolute_url }}">
+              <span class="campana__fila">
+                <span class="campana__nombre">
+                  {% if not n.leida %}<span class="sr-only">Sin leer. </span>{% endif %}{{ n.titulo }}
+                </span>
+                <span class="campana__fecha">{{ n.fecha|hace }}</span>
+              </span>
+              <span class="campana__mensaje">{{ n.mensaje }}</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="campana__vacio">No tienes avisos todavía.</p>
+    {% endif %}
+
+    <a class="campana__pie" href="{% url 'notificacion-list' %}">Ver todas</a>
+  </div>
+</details>

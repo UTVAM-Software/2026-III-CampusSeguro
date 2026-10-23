@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load fechas %}
+
+{% comment %}
+Una respuesta tuya a un reporte. Pantalla de gestión: lo importante es a qué
+reporte contestaste y qué dijiste, con el enlace de vuelta a ese reporte.
+{% endcomment %}
+
+{% block volver %}<a class="atras" href="{% url 'confirmacion-list' %}">← Volver a mis respuestas</a>{% endblock %}
+
+{% block content %}
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% include '_icono.html' with nombre='condiciones_registradas' %}Tu respuesta</h1>
+    {% include '_insignia.html' with texto=object.confirma|yesno:"Sigue,Ya no" tono=object.confirma|yesno:"exito,apagada" %}
+  </div>
+  <p class="cabecera__meta">{{ object.fecha|hace }}</p>
+</header>
+
+{% if object.comentario %}
+  <div class="tarjeta">
+    <p>«{{ object.comentario }}»</p>
+  </div>
+{% endif %}
+
+<div class="tarjeta">
+  <h2 class="tarjeta__titulo">El reporte</h2>
+  <dl class="datos-lista">
+    <dt>Reporte</dt>
+    <dd><a href="{% url 'reporte-detail' object.reporte_id %}">{{ object.reporte }}</a></dd>
+    <dt>Dijiste</dt><dd>{{ object.confirma|yesno:"Que sigue presente,Que ya no está" }}</dd>
+    <dt>Fecha</dt><dd>{{ object.fecha|date:"d/m/Y H:i" }}</dd>
+  </dl>
+</div>
+
+<div class="acciones">
+  <a class="boton secundario" href="{% url 'confirmacion-update' object.pk %}">Cambiar respuesta</a>
+  <a class="boton secundario quitar" href="{% url 'confirmacion-delete' object.pk %}">Eliminar</a>
+</div>
+{% endblock %}

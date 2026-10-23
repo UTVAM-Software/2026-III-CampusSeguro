@@ -1,0 +1,130 @@
+{% load static %}{% comment %}
+El armazón de toda pantalla con sesión.
+
+LAS MISMAS ÁREAS EN LOS DOS TAMAÑOS
+    En el teléfono, una barra de pestañas abajo —donde llega el pulgar—. En el
+    escritorio, una lateral azul marino. Las dos salen de la misma lista
+    (config/navegacion.py), así que no pueden separarse.
+
+ARRIBA DE LA LATERAL VA LA CUENTA, NO LA MARCA
+    Quien ya está dentro sabe qué aplicación es. Lo que le hace falta saber de
+    un vistazo es con qué cuenta está mirando y de qué campus es lo que ve.
+{% endcomment %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Campus Seguro{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v={{ VERSION_CSS }}">
+  {% include '_favicon.html' %}
+  {% comment %}
+  Lo que necesita UNA pantalla y no las demas. El mapa carga aqui la hoja de
+  Leaflet: ponerla en todas seria bajarse una libreria de mapas para ver el
+  perfil.
+  {% endcomment %}
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="app">
+
+  {# ---------------------- Lateral (escritorio) ---------------------- #}
+  <aside class="lateral">
+    <div class="lateral__arriba">
+      <a class="lateral__cuenta" href="{% url 'perfil' %}">
+        {% include '_avatar.html' with usuario=user %}
+        <span class="lateral__cuenta-texto">
+          <span class="lateral__nombre">{{ user.nombre }}</span>
+          {# El nombre del campus no siempre cabe: se recorta y queda entero en el title. #}
+          <span class="lateral__campus" {% if user.campus %}title="{{ user.campus.nombre }}"{% endif %}>
+            {% if user.campus %}{{ user.campus }}{% else %}{{ user.get_rol_display }}{% endif %}
+          </span>
+        </span>
+      </a>
+
+      {% include '_campana.html' with clases='campana--oscura' %}
+    </div>
+
+    <hr class="lateral__raya">
+
+    <nav aria-label="Navegación principal" class="lateral__nav">
+      {% for entrada in navegacion %}
+        <a class="lateral__enlace" href="{{ entrada.url }}"
+           {% if entrada.clave == seccion_activa %}aria-current="page"{% endif %}>
+          {% include '_icono.html' with nombre=entrada.icono %}{{ entrada.etiqueta }}
+        </a>
+      {% endfor %}
+    </nav>
+
+    {% comment %}
+    Separado del grupo por un hueco: cerrar sesión no es una sección donde se
+    entra, es la salida. Va por POST para que una imagen escondida en otra
+    página no pueda cerrarle la sesión a quien la abra.
+    {% endcomment %}
+    <form method="post" action="{% url 'salir' %}" class="lateral__salir">
+      {% csrf_token %}
+      <button type="submit" class="lateral__enlace">
+        <span class="lateral__hueco" aria-hidden="true"></span>Cerrar sesión
+      </button>
+    </form>
+  </aside>
+
+  {# ------------------------------ Contenido ------------------------------ #}
+  <div class="app__contenido">
+    {# En el teléfono no hay lateral, así que la cuenta y la salida van arriba. #}
+    <header class="cabecera-movil">
+      <a class="cabecera-movil__cuenta" href="{% url 'perfil' %}">
+        {% include '_avatar.html' with usuario=user clases='avatar--chico' %}
+        <span>{{ user.nombre }}</span>
+      </a>
+      <div class="cabecera-movil__acciones">
+        {% include '_campana.html' %}
+        <form method="post" action="{% url 'salir' %}">
+          {% csrf_token %}
+          <button type="submit" class="boton secundario">Salir</button>
+        </form>
+      </div>
+    </header>
+
+    <main>
+      {% block volver %}{% endblock %}
+      {% for m in messages %}<p class="mensaje {{ m.tags }}">{{ m }}</p>{% endfor %}
+      {% block content %}{% endblock %}
+    </main>
+
+    {% comment %}
+    La letra pequeña del final. Cada pantalla puede poner la suya: el
+    formulario de reportar dice lo que toca decir ALLÍ -no señales a nadie-,
+    y repetir además la general serían dos cajas azules seguidas diciendo
+    cosas distintas.
+    {% endcomment %}
+    <footer class="pie">
+      {% block descargo %}
+        Información reportada por la comunidad. Campus Seguro no detecta
+        peligro ni garantiza seguridad física.
+      {% endblock %}
+    </footer>
+  </div>
+
+  {# ---------------------- Pestañas (teléfono) ---------------------- #}
+  <nav class="pestanas" aria-label="Navegación principal">
+    {% for entrada in navegacion %}
+      <a class="pestanas__enlace {% if entrada.destacada %}pestanas__enlace--destacado{% endif %}"
+         href="{{ entrada.url }}"
+         {% if entrada.clave == seccion_activa %}aria-current="page"{% endif %}>
+        <span class="pestanas__icono">{% include '_icono.html' with nombre=entrada.icono %}</span>
+        <span>{{ entrada.etiqueta }}</span>
+      </a>
+    {% endfor %}
+  </nav>
+
+  {% comment %}
+  Lo que le falta al <details> de la campana para portarse como un menu:
+  cerrarse al tocar fuera y con Escape. Sin esto sigue funcionando.
+  {% endcomment %}
+  <script src="{% static 'js/campana.js' %}?v={{ VERSION_CSS }}" defer></script>
+
+  {# Igual que extra_head, pero para guiones: al final, con la pagina ya dibujada. #}
+  {% block extra_scripts %}{% endblock %}
+
+</body>
+</html>

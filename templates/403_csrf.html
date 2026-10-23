@@ -1,0 +1,25 @@
+{% extends 'errores/_marco.html' %}
+{% comment %}
+La pantalla que sale cuando falla la comprobación CSRF.
+
+Django la busca por este nombre exacto: `403_csrf.html` en la raíz de
+templates. Con que el archivo exista, la usa — no hay que configurar nada.
+
+POR QUÉ MERECE UNA PROPIA
+    La que trae Django es una página amarilla en inglés, con enlaces a su
+    documentación y un párrafo sobre `CsrfViewMiddleware`. Le habla a quien
+    programa, no a quien usa la aplicación.
+
+    Y el caso que de verdad ocurre no es un ataque: es una pestaña que llevaba
+    abierta un rato, o el botón de "reintentar" del navegador reenviando un
+    formulario viejo. Eso se arregla recargando, y eso es lo que tiene que
+    decir la pantalla.
+{% endcomment %}
+{% block titulo %}Sesión caducada{% endblock %}
+{% block codigo %}403{% endblock %}
+{% block titulo_visible %}Esta página llevaba demasiado tiempo abierta{% endblock %}
+{% block texto %}
+Por seguridad, los formularios caducan. Vuelve a cargar la página y escribe
+otra vez lo que ibas a enviar. Si llegaste aquí desde el botón de reintentar
+del navegador, no lo uses: entra por la dirección.
+{% endblock %}

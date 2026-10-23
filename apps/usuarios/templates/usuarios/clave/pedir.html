@@ -1,0 +1,29 @@
+{% extends 'usuarios/_marco_acceso.html' %}
+
+{% comment %}
+Pedir el enlace para recuperar la contraseña.
+
+Va sobre el marco de la pantalla de acceso -no sobre `base.html`- porque
+quien llega aquí NO tiene sesión: enseñarle la lateral con su nombre y sus
+secciones sería enseñarle la aplicación de otra persona.
+{% endcomment %}
+
+{% block titulo %}Recuperar contraseña{% endblock %}
+
+{% block contenido %}
+<div class="clave">
+  <h1 class="clave__titulo">¿Olvidaste tu contraseña?</h1>
+  <p class="clave__ayuda">
+    Escribe el correo de tu cuenta y te mandamos un enlace para poner una
+    nueva.
+  </p>
+
+  <form method="post" novalidate>
+    {% csrf_token %}
+    {% for campo in form %}{% include '_campo.html' with campo=campo %}{% endfor %}
+    <button type="submit" class="bloque">Mandarme el enlace</button>
+  </form>
+
+  <p class="clave__pie"><a href="{% url 'entrar' %}">Volver a iniciar sesión</a></p>
+</div>
+{% endblock %}

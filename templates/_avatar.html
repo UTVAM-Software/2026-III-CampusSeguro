@@ -1,0 +1,20 @@
+{% comment %}
+La foto de quien mira, o la inicial de su nombre si no tiene.
+
+    {% include '_avatar.html' with usuario=user clases='avatar--grande' %}
+
+NO HAY SILUETA GENÉRICA, Y ES A PROPÓSITO
+    Quien no sube foto no recibe el monigote gris de siempre, que no dice
+    nada de nadie: recibe la inicial de su nombre, que al menos distingue una
+    cuenta de otra de un vistazo.
+
+LA FOTO VA CON `loading="lazy"`
+    En la lista de cuentas hay una por fila. Sin esto el navegador se las
+    baja todas de golpe antes de pintar nada.
+{% endcomment %}
+{% if usuario.foto %}
+  <img class="avatar avatar--foto {{ clases }}" src="{{ usuario.foto.url }}"
+       alt="" aria-hidden="true" loading="lazy" width="48" height="48">
+{% else %}
+  <span class="avatar {{ clases }}" aria-hidden="true">{{ usuario.nombre|slice:":1"|upper }}</span>
+{% endif %}
