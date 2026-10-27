@@ -6,26 +6,71 @@ FORMATO = '%Y-%m-%dT%H:%M'
 
 
 class ViajeForm(forms.ModelForm):
+    """
+    Planificar un viaje.
+
+    LOS CAMPOS VAN ESCRITOS A MANO
+        `exclude` no significa "todos menos uno": significa "todos los que el
+        modelo tenga hoy y todos los que gane después". Con la lista escrita,
+        un campo nuevo no se cuela solo en esta pantalla.
+
+    QUÉ NO ESTÁ
+        `estado` lo mueven los botones del detalle, que pasan por
+        `Viaje.cerrar()` y borran por dónde pasaste; pedirlo aquí abría una
+        segunda forma de cerrar un viaje que no borraba nada. `fecha_fin` es
+        cuándo terminó: la pone el sistema al cerrarlo.
+    """
+
     class Meta:
         model = Viaje
         # `usuario` fuera: de quién es el viaje lo pone la vista desde la
         # sesión. Si estuviera aquí, sería una lista desplegable con todas las
         # personas del sistema para elegir a nombre de quién viajas.
-        exclude = ['usuario']
+        fields = [
+            'origen', 'destino',
+            'latitud_origen', 'longitud_origen',
+            'latitud_destino', 'longitud_destino',
+            'fecha_expiracion',
+        ]
+        labels = {
+            'fecha_expiracion': 'Hora límite',
+        }
+        help_texts = {
+            'fecha_expiracion': (
+                'Hasta qué hora quieres que te acompañen. Si no has '
+                'confirmado que llegaste, es la hora a la que quien te '
+                'acompaña debería preocuparse.'
+            ),
+        }
         widgets = {
-            'fecha_fin': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format=FORMATO),
+            'fecha_expiracion': forms.DateTimeInput(
+                attrs={'type': 'datetime-local'}, format=FORMATO
+            ),
+            # Las rellena el mapa, igual que en la comparación de caminos.
+            # Nadie se sabe su latitud, y una errata al teclearla deja el
+            # viaje empezando en otra calle.
+            'latitud_origen': forms.HiddenInput(),
+            'longitud_origen': forms.HiddenInput(),
+            'latitud_destino': forms.HiddenInput(),
+            'longitud_destino': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # Bloquea fechas pasadas en el calendario
-        self.fields['fecha_fin'].widget.attrs['min'] = timezone.localtime().strftime(FORMATO)
+        self.fields['fecha_expiracion'].widget.attrs['min'] = (
+            timezone.localtime().strftime(FORMATO)
+        )
 
-    def clean_fecha_fin(self):
-        fin = self.cleaned_data.get('fecha_fin')
-        if fin and fin < timezone.now():
+    def clean_fecha_expiracion(self):
+        limite = self.cleaned_data.get('fecha_expiracion')
+
+        # Una hora límite que ya pasó nace vencida
+        if limite and limite < timezone.now():
             raise forms.ValidationError('No puedes elegir una fecha pasada.')
-        return fin
+
+        return limite
+
 
 class AcompananteForm(forms.ModelForm):
     """

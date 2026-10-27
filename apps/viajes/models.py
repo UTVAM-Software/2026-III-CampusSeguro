@@ -60,6 +60,28 @@ class Viaje(models.Model):
     def esta_en_curso(self):
         return self.estado == 'en_curso'
 
+    def cerrar(self, estado):
+        """
+        Termina el viaje y borra por dónde pasaste.
+
+        Las dos cosas van juntas a propósito, y por eso están aquí y no en la
+        vista: la aplicación promete, en el perfil y en la pantalla del
+        viaje, que no guarda historial de recorridos, y cualquier forma de
+        cerrar que no borrara dejaría esa promesa en mentira. Lo que se
+        conserva es el viaje (a dónde fuiste y cuándo), no el camino.
+
+        Devuelve si hizo algo: un viaje ya cerrado no se vuelve a cerrar.
+        """
+        if not self.esta_en_curso:
+            return False
+
+        self.estado = estado
+        self.fecha_fin = timezone.now()
+        self.save(update_fields=['estado', 'fecha_fin'])
+        self.ubicaciones.all().delete()
+
+        return True
+
     @property
     def minutos_restantes(self):
         """
