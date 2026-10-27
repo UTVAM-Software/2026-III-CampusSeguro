@@ -22,6 +22,7 @@ from apps.comunicacion.models import Aviso, Notificacion
 from apps.reportes.models import Reporte
 from apps.usuarios.permisos import PermisoRequeridoMixin
 from apps.viajes.models import Viaje, ViajeAcompanante
+from config.fechas import hace
 
 
 class InicioView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
@@ -158,6 +159,9 @@ class MapaView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
                     "estado": r.estado,
                     "estadoTexto": r.get_estado_display(),
                     "descripcion": r.descripcion,
+                    # Sin el cuándo, lo de anoche y lo de hace medio año son
+                    # el mismo punto en la pantalla.
+                    "cuando": hace(r.fecha_creacion),
                 }
                 for r in reportes
             ],
@@ -167,6 +171,9 @@ class MapaView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
                     "lng": float(p.longitud),
                     "nombre": p.nombre,
                     "tipo": p.get_tipo_display(),
+                    # "Aquí hay una enfermería" es media verdad si cierra a
+                    # las nueve y son las once.
+                    "horario": p.horario,
                 }
                 for p in puntos
             ],

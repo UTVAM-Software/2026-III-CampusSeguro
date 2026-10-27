@@ -124,7 +124,23 @@ class ViajeDetailView(PermisoRequeridoMixin, SoloMisViajesMixin, DetailView):
         return ctx
 
 
-class ViajeCreateView(PermisoRequeridoMixin, CreateView):
+class ConDestinosGuardados:
+    """
+    Los destinos guardados de quien mira, para ofrecerlos como atajo.
+
+    Los suyos y solo los suyos: a donde suele ir alguien es tan suyo como el
+    viaje.
+    """
+
+    def get_context_data(self, **kwargs):
+        contexto = super().get_context_data(**kwargs)
+        contexto['destinos'] = DestinoGuardado.objects.filter(
+            usuario=self.request.user
+        )
+        return contexto
+
+
+class ViajeCreateView(PermisoRequeridoMixin, ConDestinosGuardados, CreateView):
     permission_required = 'viajes.add_viaje'
     model = Viaje
     form_class = ViajeForm
@@ -138,7 +154,9 @@ class ViajeCreateView(PermisoRequeridoMixin, CreateView):
         return super().form_valid(form)
 
 
-class ViajeUpdateView(PermisoRequeridoMixin, SoloViajesPropiosMixin, UpdateView):
+class ViajeUpdateView(
+    PermisoRequeridoMixin, SoloViajesPropiosMixin, ConDestinosGuardados, UpdateView
+):
     permission_required = 'viajes.change_viaje'
     model = Viaje
     form_class = ViajeForm
@@ -178,22 +196,7 @@ class CerrarViajeView(PermisoRequeridoMixin, View):
     def post(self, request, pk):
         viaje = get_object_or_404(Viaje, pk=pk, usuario=request.user)
 
-        if viaje.esta_en_curso:
-            viaje.estado = self.estado
-            viaje.fecha_fin = timezone.now()
-            viaje.save(update_fields=['estado', 'fecha_fin'])
-
-            # Y se borra por donde pasaste.
-            #
-            # La aplicacion promete, en el perfil y en esta pantalla, que no
-            # guarda historial de recorridos. Mientras las posiciones se
-            # quedaran en la base, eso era mentira: el viaje terminaba y el
-            # rastro seguia ahi para siempre.
-            #
-            # Lo que se conserva es el viaje -adonde fuiste y cuando-, no el
-            # camino. Es lo que hace falta para el historial y nada mas.
-            viaje.ubicaciones.all().delete()
-
+        if viaje.cerrar(self.estado):
             messages.success(request, self.mensaje)
 
         return redirect('viaje-detail', pk=viaje.pk)

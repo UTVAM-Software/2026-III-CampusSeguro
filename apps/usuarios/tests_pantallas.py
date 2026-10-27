@@ -245,6 +245,63 @@ class MapaTests(BaseConCuentas):
             'No es de aquí', [r['descripcion'] for r in datos['reportes']]
         )
 
+    def test_el_globo_de_un_reporte_dice_cuando_se_registro(self):
+        """
+        Lo único que este sistema afirma de un reporte es que alguien lo
+        registró en un sitio y una fecha. Sin el cuándo, lo de anoche y lo de
+        hace medio año son el mismo punto en la pantalla.
+        """
+        datos = self.entrar(self.ana).get('/mapa/').context['datos_mapa']
+
+        self.assertEqual(len(datos['reportes']), 2)
+
+        for reporte in datos['reportes']:
+            self.assertTrue(
+                reporte['cuando'].startswith('hace '),
+                f"sin fecha legible en el globo: {reporte['cuando']!r}",
+            )
+
+    def test_el_globo_de_un_punto_de_apoyo_dice_su_horario(self):
+        """
+        «Aquí hay una enfermería» es media verdad si cierra a las nueve y son
+        las once.
+        """
+        PuntoApoyo.objects.create(
+            campus=self.campus, nombre='Enfermería', tipo='enfermeria',
+            latitud=20.1, longitud=-98.7, horario='Lunes a viernes 8 a 20',
+        )
+
+        datos = self.entrar(self.ana).get('/mapa/').context['datos_mapa']
+
+        self.assertEqual(datos['puntos'][0]['horario'], 'Lunes a viernes 8 a 20')
+
+    def test_un_punto_sin_horario_llega_vacio_y_no_desaparece(self):
+        """
+        Llega vacío a propósito: el globo escribe «Sin horario registrado»,
+        que no es lo mismo que estar abierto.
+        """
+        PuntoApoyo.objects.create(
+            campus=self.campus, nombre='Caseta', tipo='caseta',
+            latitud=20.1, longitud=-98.7,
+        )
+
+        datos = self.entrar(self.ana).get('/mapa/').context['datos_mapa']
+
+        self.assertEqual(datos['puntos'][0]['horario'], '')
+
+    def test_la_leyenda_explica_cada_marcador(self):
+        """
+        Se miran las clases y no los textos: «Pendiente» también sale en las
+        insignias de la lista, así que buscar la palabra pasaría aunque
+        alguien borrara la leyenda entera.
+        """
+        respuesta = self.entrar(self.ana).get('/mapa/')
+
+        for estado in ('pendiente', 'verificado', 'resuelto', 'rechazado'):
+            self.assertContains(respuesta, f'leyenda__marca--{estado}')
+
+        self.assertContains(respuesta, 'leyenda__marca--apoyo')
+
     def test_sin_campus_el_mapa_carga_igual(self):
         """Una cuenta recién creada por consola no tiene campus todavía."""
         self.ana.campus = None
