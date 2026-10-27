@@ -17,6 +17,15 @@
   --verde-claro: #e6f6ef;
   --ambar: #8a6110;
   --ambar-claro: #fdf3e0;
+
+  /* Los cuatro estados de un reporte, TAL COMO SE PINTAN EN EL MAPA.
+     mapa.js los lee de aqui con getComputedStyle en vez de llevar su propia
+     copia: asi el color del marcador y el de la leyenda salen del mismo
+     sitio y no pueden acabar diciendo cosas distintas. */
+  --estado-pendiente: var(--ambar);
+  --estado-verificado: var(--azul-vivo);
+  --estado-resuelto: var(--verde);
+  --estado-rechazado: var(--gris);
 }
 
 * { box-sizing: border-box; }
@@ -1390,6 +1399,33 @@ button[disabled]:hover { background: var(--blanco); color: var(--azul); }
 .leaflet-container { font-family: inherit; }
 .leaflet-popup-content a { font-weight: 600; }
 .leaflet-popup-content p { margin: 0.4em 0; }
+
+/* ---------- La leyenda del mapa ---------- */
+.leyenda {
+  display: flex; flex-wrap: wrap; gap: 0.35rem 1rem;
+  margin-top: 0.6rem; padding: 0.7rem 0.85rem;
+  border: 1px solid var(--borde); border-radius: 10px;
+  background: var(--blanco);
+  font-size: 0.8125rem; color: var(--gris);
+}
+.leyenda__grupo { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.85rem; }
+.leyenda__titulo { font-weight: 600; color: var(--texto); }
+.leyenda__dato { display: inline-flex; align-items: center; gap: 0.35rem; }
+
+/* Las mismas dos figuras que dibuja el mapa y al mismo tamano. El circulo
+   frente al cuadrado es lo que distingue las dos clases de marcador para
+   quien no distingue bien los colores. */
+.leyenda__marca {
+  display: block; width: 0.75rem; height: 0.75rem; flex: none;
+  border: 2px solid var(--blanco);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.18);
+}
+.leyenda__marca--condicion { border-radius: 50%; }
+.leyenda__marca--apoyo { border-radius: 3px; background: var(--verde); }
+.leyenda__marca--pendiente { background: var(--estado-pendiente); }
+.leyenda__marca--verificado { background: var(--estado-verificado); }
+.leyenda__marca--resuelto { background: var(--estado-resuelto); }
+.leyenda__marca--rechazado { background: var(--estado-rechazado); }
 
 /* ---------- Las pastillas del filtro ---------- */
 /*

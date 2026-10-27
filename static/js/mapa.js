@@ -73,18 +73,31 @@
     return div.innerHTML;
   }
 
-  /** El color de cada estado. La forma distingue ademas del color. */
-  var COLOR_ESTADO = {
-    pendiente: "#8a6110",
-    verificado: "#1976d2",
-    resuelto: "#0f7a4f",
-    rechazado: "#5b6b7b",
-  };
+  /**
+   * El color de cada estado, leido de las variables `--estado-*` de la hoja
+   * de estilos. De ahi salen tambien los cuadritos de la leyenda: con una
+   * copia aqui, cambiar un color dejaria la leyenda diciendo una cosa y el
+   * mapa pintando otra. Se leen una sola vez y no por marcador.
+   */
+  var GRIS_DE_RESERVA = "#5b6b7b";
+  var colores = null;
+
+  function colorDeEstado(estado) {
+    if (colores === null) {
+      var raiz = getComputedStyle(document.documentElement);
+      colores = {};
+      ["pendiente", "verificado", "resuelto", "rechazado"].forEach(function (nombre) {
+        colores[nombre] = raiz.getPropertyValue("--estado-" + nombre).trim();
+      });
+    }
+
+    return colores[estado] || GRIS_DE_RESERVA;
+  }
 
   function marcadorReporte(reporte) {
     return L.circleMarker([reporte.lat, reporte.lng], {
       radius: 9,
-      fillColor: COLOR_ESTADO[reporte.estado] || "#5b6b7b",
+      fillColor: colorDeEstado(reporte.estado),
       fillOpacity: 0.95,
       color: "#ffffff",
       weight: 2,
@@ -104,19 +117,33 @@
     });
   }
 
+  /**
+   * Con la fecha: sin ella, un bache de anoche y uno de hace medio ano son el
+   * mismo punto en la pantalla.
+   */
   function popupReporte(reporte) {
     return (
       "<strong>" + escapar(reporte.tipo) + "</strong><br>" +
-      "<small>" + escapar(reporte.estadoTexto) + "</small>" +
+      "<small>" + escapar(reporte.estadoTexto) +
+      (reporte.cuando ? " · Registrado " + escapar(reporte.cuando) : "") +
+      "</small>" +
       "<p>" + escapar(reporte.descripcion) + "</p>" +
       '<a href="/reportes/' + encodeURIComponent(reporte.id) + '/">Ver detalle</a>'
     );
   }
 
+  /**
+   * Con el horario: "aqui hay una enfermeria" es media verdad si cierra a las
+   * nueve y son las once. Sin horario registrado se dice que no lo hay, que
+   * no es lo mismo que estar abierto.
+   */
   function popupPunto(punto) {
     return (
       "<strong>" + escapar(punto.nombre) + "</strong><br>" +
-      "<small>" + escapar(punto.tipo) + "</small>"
+      "<small>" + escapar(punto.tipo) + "</small>" +
+      "<p>" + (punto.horario
+        ? escapar(punto.horario)
+        : "Sin horario registrado") + "</p>"
     );
   }
 
@@ -135,6 +162,11 @@
     });
 
     base(mapa);
+
+    // La leyenda nace escondida en la plantilla: hay mapa, asi que ya tiene
+    // algo que explicar.
+    var leyenda = document.querySelector("[data-leyenda]");
+    if (leyenda) leyenda.hidden = false;
 
     var capas = [];
 
