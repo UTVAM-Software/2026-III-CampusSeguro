@@ -1,18 +1,19 @@
 """
-Los tres roles del proyecto, convertidos en GRUPOS de Django con PERMISOS.
+Los cinco roles del proyecto, convertidos en GRUPOS de Django con PERMISOS.
 
 POR QUÉ GRUPOS Y NO SOLO EL CAMPO `rol`
     El campo `rol` decía quién era cada cuenta, pero Django no lo entiende:
     `permission_required`, `user.has_perm()` y `{{ perms }}` en las plantillas
     trabajan con permisos. Ahora cada rol es un grupo (Estudiante,
-    Administrador de campus, Superadministrador) y cada grupo tiene sus
-    permisos. Lo que una cuenta puede hacer sale de sus grupos.
+    Administrador de campus, Superadministrador, Usuario externo y Solo
+    lectura) y cada grupo tiene sus permisos. Lo que una cuenta puede hacer
+    sale de sus grupos.
 
 EL ROL SIGUE EXISTIENDO
     Es el rol "principal" de la cuenta. Al guardar una cuenta, `Usuario.save()`
-    la mete en el grupo de su rol y la saca de los otros dos. Los demás grupos
-    que el superadministrador cree desde la app ("Brigada de seguridad", por
-    ejemplo) se suman a ese y no se tocan.
+    la mete en el grupo de su rol y la saca de los otros cuatro. Los demás
+    grupos que el superadministrador cree desde la app ("Brigada de
+    seguridad", por ejemplo) se suman a ese y no se tocan.
 
 LOS PERMISOS DE CADA GRUPO SE PUEDEN CAMBIAR DESDE LA APP
     Lo de abajo son los permisos con los que NACE cada grupo. Si el
@@ -36,9 +37,9 @@ def _crud(app, modelo, *acciones):
 
 TODO = ('view', 'add', 'change', 'delete')
 
-#: Lo que puede hacer cualquier cuenta. Los registros de otra persona o de
-#: otro campus no los ve aunque tenga el permiso: eso lo filtra cada vista con
-#: `get_queryset()` y responde 404.
+#: Lo que puede hacer cualquier cuenta de la comunidad. Los registros de otra
+#: persona o de otro campus no los ve aunque tenga el permiso: eso lo filtra
+#: cada vista con `get_queryset()` y responde 404.
 PERMISOS_ESTUDIANTE = [
     *_crud('campus', 'campus', 'view'),
     *_crud('campus', 'puntoapoyo', 'view'),
@@ -76,20 +77,8 @@ PERMISOS_SUPERADMIN = PERMISOS_ADMIN + [
     *_crud('auth', 'permission', *TODO),
 ]
 
-#: rol -> (nombre del grupo, permisos con los que nace)
-GRUPOS_DE_ROL = {
-    'estudiante': ('Estudiante', PERMISOS_ESTUDIANTE),
-    'admin': ('Administrador de campus', PERMISOS_ADMIN),
-    'superadmin': ('Superadministrador', PERMISOS_SUPERADMIN),
-    'externo': ('Usuario externo', PERMISOS_EXTERNO),
-    'solo_lectura': ('Solo lectura', PERMISOS_SOLO_LECTURA),
-}
-
-#: Los nombres de los tres grupos de rol. No se pueden borrar ni renombrar
-#: desde la app: `Usuario.save()` los busca por nombre.
-NOMBRES_GRUPOS_DE_ROL = [nombre for nombre, _ in GRUPOS_DE_ROL.values()]
-
-#: Usuario externo: no es de la comunidad universitaria. Solo consulta lo público.
+#: Usuario externo: alguien que no es de la comunidad universitaria. Solo
+#: consulta lo público (campus, puntos de apoyo y avisos) y edita su ficha.
 PERMISOS_EXTERNO = [
     *_crud('campus', 'campus', 'view'),
     *_crud('campus', 'puntoapoyo', 'view'),
@@ -97,7 +86,8 @@ PERMISOS_EXTERNO = [
     *_crud('usuarios', 'usuario', 'view', 'change'),  # solo su propia ficha
 ]
 
-#: Solo lectura: ve TODO el sistema, no puede agregar, modificar ni eliminar.
+#: Solo lectura: ve TODO el sistema, pero no puede agregar, modificar ni
+#: eliminar nada. Por eso solo lleva permisos `view_`.
 PERMISOS_SOLO_LECTURA = [
     *_crud('campus', 'campus', 'view'),
     *_crud('campus', 'puntoapoyo', 'view'),
@@ -114,6 +104,21 @@ PERMISOS_SOLO_LECTURA = [
     *_crud('auth', 'group', 'view'),
     *_crud('auth', 'permission', 'view'),
 ]
+
+#: rol -> (nombre del grupo, permisos con los que nace)
+#: Tiene que ir DESPUÉS de las listas de permisos de arriba.
+GRUPOS_DE_ROL = {
+    'estudiante': ('Estudiante', PERMISOS_ESTUDIANTE),
+    'admin': ('Administrador de campus', PERMISOS_ADMIN),
+    'superadmin': ('Superadministrador', PERMISOS_SUPERADMIN),
+    'externo': ('Usuario externo', PERMISOS_EXTERNO),
+    'solo_lectura': ('Solo lectura', PERMISOS_SOLO_LECTURA),
+}
+
+#: Los nombres de los cinco grupos de rol. No se pueden borrar ni renombrar
+#: desde la app: `Usuario.save()` los busca por nombre.
+NOMBRES_GRUPOS_DE_ROL = [nombre for nombre, _ in GRUPOS_DE_ROL.values()]
+
 
 def buscar_permisos(nombres):
     """
@@ -150,7 +155,7 @@ def grupo_de_rol(rol):
 
 def asegurar_grupos():
     """
-    Que existan los tres grupos de rol y que cada cuenta esté en el suyo.
+    Que existan los cinco grupos de rol y que cada cuenta esté en el suyo.
 
     Se llama al terminar `migrate` (ver `UsuariosConfig.ready`). Así una base
     que ya tenía cuentas -la de cada integrante del equipo- queda repartida
