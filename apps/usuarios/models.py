@@ -66,20 +66,25 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
     negocio -estudiante, docente, seguridad- no un permiso de administración.
     """
 
-    # LOS TRES ROLES DEL PROYECTO ANTERIOR
+        # LOS CINCO ROLES DEL PROYECTO
     #
-    # Eran cinco -se sumaban docente, administrativo y seguridad- y tres de
-    # ellos no daban ni quitaban nada: una cuenta con rol `seguridad` podía
-    # exactamente lo mismo que una de estudiante. Un rol que no cambia nada
-    # es peor que no tenerlo: quien lo asigna cree que está repartiendo
-    # permisos y no está repartiendo nada.
+    # Antes había cinco roles heredados del proyecto anterior -docente,
+    # administrativo y seguridad no daban ni quitaban nada- y se
+    # redujeron a tres. Ahora son cinco, pero todos se distinguen por
+    # los permisos de su grupo (ver roles.py):
     #
-    # Estos tres sí se distinguen, y la diferencia está escrita abajo en
-    # `es_admin` y `es_superadmin`.
+    #   estudiante    -> usa la aplicación con sus propios registros
+    #   admin         -> administra su campus
+    #   superadmin    -> administra el sistema
+    #   externo       -> no es de la comunidad: solo consulta lo público
+    #   solo_lectura  -> ve todo el sistema, no puede agregar, modificar
+    #                    ni eliminar
     ROLES = [
         ('estudiante', 'Estudiante'),
         ('admin', 'Administrador de campus'),
         ('superadmin', 'Superadministrador'),
+        ('externo', 'Usuario externo'),
+        ('solo_lectura', 'Solo lectura'),
     ]
     nombre = models.CharField(max_length=100)
     apellidos = models.CharField(max_length=100, blank=True)
