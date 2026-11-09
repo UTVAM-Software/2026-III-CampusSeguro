@@ -81,12 +81,39 @@ GRUPOS_DE_ROL = {
     'estudiante': ('Estudiante', PERMISOS_ESTUDIANTE),
     'admin': ('Administrador de campus', PERMISOS_ADMIN),
     'superadmin': ('Superadministrador', PERMISOS_SUPERADMIN),
+    'externo': ('Usuario externo', PERMISOS_EXTERNO),
+    'solo_lectura': ('Solo lectura', PERMISOS_SOLO_LECTURA),
 }
 
 #: Los nombres de los tres grupos de rol. No se pueden borrar ni renombrar
 #: desde la app: `Usuario.save()` los busca por nombre.
 NOMBRES_GRUPOS_DE_ROL = [nombre for nombre, _ in GRUPOS_DE_ROL.values()]
 
+#: Usuario externo: no es de la comunidad universitaria. Solo consulta lo público.
+PERMISOS_EXTERNO = [
+    *_crud('campus', 'campus', 'view'),
+    *_crud('campus', 'puntoapoyo', 'view'),
+    *_crud('comunicacion', 'aviso', 'view'),
+    *_crud('usuarios', 'usuario', 'view', 'change'),  # solo su propia ficha
+]
+
+#: Solo lectura: ve TODO el sistema, no puede agregar, modificar ni eliminar.
+PERMISOS_SOLO_LECTURA = [
+    *_crud('campus', 'campus', 'view'),
+    *_crud('campus', 'puntoapoyo', 'view'),
+    *_crud('campus', 'correccion', 'view'),
+    *_crud('reportes', 'reporte', 'view'),
+    *_crud('reportes', 'reporteconfirmacion', 'view'),
+    *_crud('viajes', 'viaje', 'view'),
+    *_crud('viajes', 'viajeacompanante', 'view'),
+    *_crud('viajes', 'ubicacionviaje', 'view'),
+    *_crud('viajes', 'destinoguardado', 'view'),
+    *_crud('comunicacion', 'aviso', 'view'),
+    *_crud('comunicacion', 'notificacion', 'view'),
+    *_crud('usuarios', 'usuario', 'view'),
+    *_crud('auth', 'group', 'view'),
+    *_crud('auth', 'permission', 'view'),
+]
 
 def buscar_permisos(nombres):
     """
