@@ -25,16 +25,31 @@ from apps.viajes.models import Viaje, ViajeAcompanante
 
 
 class InicioView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
-    permission_required = 'reportes.view_reporte'
+    """
+    La pantalla a la que cae cualquiera al entrar (`LOGIN_REDIRECT_URL`).
+
+    PIDE EL PERMISO QUE TIENEN TODAS LAS CUENTAS
+        Pedía `reportes.view_reporte`, que un usuario externo no tiene: se
+        encontraba un 403 nada más iniciar sesión, antes de poder ir a
+        ninguna parte. `campus.view_campus` lo tienen los cinco roles.
+
+        Cada trozo de la pantalla se pide aparte, con el mismo permiso que
+        pide la lista a la que lleva. Lo que una cuenta no puede abrir,
+        tampoco se le asoma aquí.
+    """
+
+    permission_required = 'campus.view_campus'
     template_name = "index.html"
 
     def get_context_data(self, **kwargs):
         contexto = super().get_context_data(**kwargs)
         usuario = self.request.user
         campus = usuario.campus
+        puede = usuario.has_perm
 
         contexto["viaje_en_curso"] = (
             Viaje.objects.filter(usuario=usuario, estado="en_curso").first()
+            if puede("viajes.view_viaje") else None
         )
 
         # Los viajes que esta persona acompaña también están activos: dejarlos
@@ -43,6 +58,7 @@ class InicioView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
             ViajeAcompanante.objects
             .filter(acompanante=usuario, estado="aceptado", viaje__estado="en_curso")
             .select_related("viaje", "viaje__usuario")
+            if puede("viajes.view_viaje") else []
         )
 
         hoy = timezone.localdate()
@@ -54,7 +70,7 @@ class InicioView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
             .filter(campus=campus, activo=True)
             .filter(Q(fecha_expiracion__isnull=True) | Q(fecha_expiracion__gte=hoy))
             .order_by("-fecha_publicacion")[:2]
-            if campus else []
+            if campus and puede("comunicacion.view_aviso") else []
         )
 
         contexto["reportes"] = (
@@ -62,16 +78,18 @@ class InicioView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
             .filter(campus=campus)
             .select_related("usuario")
             .order_by("-fecha_creacion")[:3]
-            if campus else []
+            if campus and puede("reportes.view_reporte") else []
         )
 
         contexto["puntos"] = (
-            PuntoApoyo.objects.filter(campus=campus, activo=True)[:3] if campus else []
+            PuntoApoyo.objects.filter(campus=campus, activo=True)[:3]
+            if campus and puede("campus.view_puntoapoyo") else []
         )
 
-        contexto["sin_leer"] = Notificacion.objects.filter(
-            usuario=usuario, leida=False
-        ).count()
+        contexto["sin_leer"] = (
+            Notificacion.objects.filter(usuario=usuario, leida=False).count()
+            if puede("comunicacion.view_notificacion") else 0
+        )
 
         return contexto
 

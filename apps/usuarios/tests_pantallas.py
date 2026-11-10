@@ -20,8 +20,10 @@ from apps.campus.models import Campus, PuntoApoyo
 from apps.comunicacion.models import Aviso, Notificacion
 from apps.reportes.models import Reporte, ReporteConfirmacion
 from apps.viajes.models import UbicacionViaje, Viaje, ViajeAcompanante
+from config.navegacion import construir
 
-from .tests_base import BaseConCuentas
+from .models import Usuario
+from .tests_base import CLAVE, BaseConCuentas
 
 
 class PantallasQueCarganTests(BaseConCuentas):
@@ -398,3 +400,44 @@ class PanelTests(BaseConCuentas):
     def test_sale_en_la_navegacion_solo_de_quien_administra(self):
         self.assertContains(self.entrar(self.jefa).get('/'), 'href="/panel/"')
         self.assertNotContains(self.entrar(self.ana).get('/'), 'href="/panel/"')
+
+
+class NadieSeQuedaFueraDeSuPropioInicioTests(BaseConCuentas):
+    """
+    La pantalla de inicio es a donde cae cualquiera al iniciar sesión
+    (`LOGIN_REDIRECT_URL`), así que ningún rol puede recibir un 403 ahí.
+
+    Pasó con el usuario externo: inicio pedía `reportes.view_reporte`, que ese
+    rol no tiene. Iniciaba sesión y lo primero que veía era "esto no es para
+    tu cuenta", sin poder ir a ninguna parte.
+    """
+
+    def cuenta_de(self, rol):
+        return Usuario.objects.create_user(
+            correo=f'{rol}@x.edu', nombre=rol, password=CLAVE,
+            campus=self.campus, rol=rol,
+        )
+
+    def test_los_cinco_roles_entran_al_inicio(self):
+        for rol, _ in Usuario.ROLES:
+            with self.subTest(rol=rol):
+                respuesta = self.entrar(self.cuenta_de(rol)).get('/')
+
+                self.assertEqual(respuesta.status_code, 200)
+
+    def test_la_barra_no_ofrece_puertas_que_se_cierran_en_la_cara(self):
+        """
+        Cada área declara el permiso de la vista a la que lleva. Si alguien
+        añade una con el permiso equivocado, aquí se ve: la cuenta la vería
+        en la barra y recibiría un 403 al tocarla.
+        """
+        for rol, _ in Usuario.ROLES:
+            cuenta = self.cuenta_de(rol)
+            cliente = self.entrar(cuenta)
+
+            for area in construir(cuenta):
+                with self.subTest(rol=rol, area=area['clave']):
+                    self.assertNotEqual(
+                        cliente.get(area['url']).status_code, 403,
+                        f"la barra le ofrece {area['etiqueta']} a {rol} y da 403",
+                    )
