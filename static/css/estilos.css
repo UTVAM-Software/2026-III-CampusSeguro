@@ -1853,3 +1853,47 @@ main > .estado {
 /* Y dentro de un grupo de casillas, centradas con su texto (va después de la
    regla de arriba para ganarle). */
 .formulario .casilla input[type="checkbox"]:not(.sr-only) { align-self: center; }
+
+/* ---------- Documentos largos (el aviso de privacidad) ----------
+   No extienden base.html -se leen sin sesion-, asi que el ancho de lectura
+   y los margenes se ponen aqui: un parrafo a todo lo ancho de una pantalla
+   de escritorio no se sigue con los ojos. */
+.documento {
+  max-width: 44rem; margin: 0 auto; padding: 2rem 1rem 4rem;
+  color: var(--texto); line-height: 1.65;
+}
+.documento h1 { margin-bottom: 0.2rem; }
+.documento h2 {
+  margin-top: 2.2rem; padding-top: 1.2rem;
+  border-top: 1px solid var(--borde);
+}
+.documento__fecha { color: var(--gris); font-size: 0.875rem; margin-top: 0; }
+.documento ul { padding-left: 1.2rem; }
+.documento li { margin-bottom: 0.5rem; }
+
+/* La tabla de datos se vuelve legible en movil: sin esto, diez filas de tres
+   columnas obligan a arrastrar la pagina de lado. */
+.documento__tabla { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+.documento__tabla th, .documento__tabla td {
+  padding: 0.6rem 0.5rem; text-align: left; vertical-align: top;
+  border-bottom: 1px solid var(--borde); font-size: 0.9rem;
+}
+.documento__tabla th { color: var(--azul); }
+
+@media (max-width: 40rem) {
+  .documento__tabla, .documento__tabla tbody, .documento__tabla tr,
+  .documento__tabla td { display: block; width: 100%; }
+  .documento__tabla thead { display: none; }
+  .documento__tabla tr {
+    margin-bottom: 0.9rem; padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--borde);
+  }
+  .documento__tabla td { border: 0; padding: 0.15rem 0; }
+  .documento__tabla td:first-child { font-weight: 600; }
+}
+
+.documento__pie {
+  margin-top: 2.5rem; padding-top: 1.2rem;
+  border-top: 1px solid var(--borde);
+  color: var(--gris); font-size: 0.875rem;
+}

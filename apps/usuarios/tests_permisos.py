@@ -66,6 +66,11 @@ QUIEN_ENTRA = {
     'clave-nueva': ABIERTA,
     'clave-lista': ABIERTA,
 
+    # El aviso de privacidad, abierto a propósito: la ley lo pide ANTES de
+    # recoger los datos, y uno que solo se lee estando dentro llega tarde
+    # para decidir si entras.
+    'privacidad': ABIERTA,
+
     # --- Pantallas de todo el mundo. Lo de dentro va filtrado. ---
     'index': CUALQUIERA,
     'mapa': CUALQUIERA,

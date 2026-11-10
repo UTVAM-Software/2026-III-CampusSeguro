@@ -1,0 +1,255 @@
+{% load static %}{% comment %}
+El aviso de privacidad.
+
+SE LEE SIN SESIÓN, Y ES A PROPÓSITO
+    La ley lo pide antes de recoger los datos, no después: un aviso que solo
+    se ve estando dentro llega tarde para decidir si entras. Por eso no
+    extiende base.html —que lleva la barra de navegación de quien ya entró—
+    y por eso su ruta no pasa por `login_required`.
+
+LO QUE DICE SALE DE LOS MODELOS
+    La lista de datos no está copiada de una plantilla: es lo que de verdad
+    guardan `Usuario`, `Viaje`, `UbicacionViaje`, `DestinoGuardado` y
+    `Reporte`. Si alguien añade un campo y no lo pone aquí, este documento
+    pasa a ser mentira.
+{% endcomment %}<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aviso de privacidad · Campus Seguro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/estilos.css' %}?v={{ VERSION_CSS }}">
+  {% include '_favicon.html' %}
+</head>
+<body>
+<main class="documento">
+  <a class="atras" href="{% url 'entrar' %}">← Volver</a>
+
+  <h1>Aviso de privacidad</h1>
+  <p class="documento__fecha">Última actualización: noviembre de 2026</p>
+
+  <p>
+    <strong>Campus Seguro</strong> es un proyecto escolar de la carrera de
+    Ingeniería en Tecnologías de la Información e Innovación Digital de la
+    Universidad Tecnológica de la Zona Metropolitana del Valle de México
+    (UTVAM), desarrollado por Alexis Carabeo Amaro y Lady Guadalupe Meza
+    Solis. Somos responsables de los datos personales que recabamos aquí.
+  </p>
+
+  <p>
+    Para cualquier asunto de este aviso, incluido ejercer los derechos que se
+    explican más abajo, se puede escribir a quien administra el sistema desde
+    la pantalla de perfil, o a la dirección de contacto del equipo publicada
+    en el repositorio del proyecto.
+  </p>
+
+  <h2>Qué datos recabamos, y para qué</h2>
+
+  <p>
+    Solo pedimos lo que hace falta para que la aplicación funcione. Lo que es
+    opcional se dice que lo es.
+  </p>
+
+  <table class="documento__tabla">
+    <thead>
+      <tr><th>Dato</th><th>Para qué</th><th>¿Obligatorio?</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Nombre y apellidos</td>
+        <td>Identificarte ante quien te acompaña en un viaje</td>
+        <td>El nombre sí; los apellidos no</td>
+      </tr>
+      <tr>
+        <td>Correo electrónico</td>
+        <td>Entrar a tu cuenta y recuperar tu contraseña</td>
+        <td>Sí</td>
+      </tr>
+      <tr>
+        <td>Contraseña</td>
+        <td>Entrar. Se guarda convertida con Argon2id, que no se puede
+            revertir: nadie, ni quien administra, puede leerla</td>
+        <td>Sí</td>
+      </tr>
+      <tr>
+        <td>Teléfono</td>
+        <td>Que quien te acompaña pueda llamarte si no llegas</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td>Foto de perfil</td>
+        <td>Reconocerte en la pantalla. Se reduce a 256 px antes de
+            guardarse</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td>Campus</td>
+        <td>Enseñarte lo de tu universidad y no lo de otra</td>
+        <td>Sí</td>
+      </tr>
+      <tr>
+        <td>Origen, destino y hora de tus viajes</td>
+        <td>El acompañamiento y tu propio historial</td>
+        <td>Solo si planificas un viaje</td>
+      </tr>
+      <tr>
+        <td><strong>Tu ubicación durante un viaje en curso</strong></td>
+        <td>Que quien aceptaste ver dónde vas. <strong>Se borra al cerrar el
+            viaje</strong></td>
+        <td>Solo mientras dura el viaje, y con el permiso del navegador</td>
+      </tr>
+      <tr>
+        <td>Destinos guardados</td>
+        <td>No volver a escribir la dirección de los sitios a los que vas
+            seguido</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td>Tus reportes: tipo, descripción, ubicación y foto</td>
+        <td>Que la comunidad de tu campus sepa qué hay en el camino</td>
+        <td>Solo si reportas. La foto es opcional</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    <strong>No pedimos ni guardamos</strong> datos financieros, CURP, RFC,
+    identificaciones oficiales, ni datos personales sensibles —origen racial
+    o étnico, estado de salud, creencias, afiliación sindical, opiniones
+    políticas o preferencia sexual—.
+  </p>
+
+  <h2>Lo que NO guardamos: tu recorrido</h2>
+
+  <p>
+    Mientras un viaje está en curso, tu posición se guarda para que quien te
+    acompaña pueda verla. <strong>Al cerrar el viaje esas posiciones se
+    borran.</strong> Se conserva a dónde fuiste y cuándo, no por dónde
+    pasaste.
+  </p>
+
+  <p>
+    No es una promesa suelta: cerrar un viaje y borrar sus posiciones son la
+    misma operación en el código, y hay una prueba automática que falla si
+    alguna vez dejan de ir juntas.
+  </p>
+
+  <h2>Quién puede ver qué</h2>
+
+  <ul>
+    <li>
+      <strong>Tus viajes son tuyos.</strong> Solo los ve quien viaja y quien
+      aceptó acompañarlo. Ni siquiera quien administra el campus: el sistema
+      responde «no existe», no «no tienes permiso», porque decir lo segundo
+      ya revelaría que ese viaje existe.
+    </li>
+    <li>
+      <strong>Tus reportes son públicos para tu campus</strong>, con tu
+      nombre. Es la única forma de que la comunidad pueda confirmarlos.
+    </li>
+    <li>
+      <strong>Tus destinos guardados no los ve nadie más</strong> que tú.
+    </li>
+    <li>
+      <strong>Existe un rol de auditoría</strong> que puede consultar todo el
+      sistema y no puede modificar nada. Está pensado para supervisión
+      institucional.
+    </li>
+  </ul>
+
+  <h2>Tus derechos ARCO, y cómo ejercerlos</h2>
+
+  <p>
+    Puedes pedir <strong>acceder</strong> a tus datos, <strong>rectificar</strong>
+    los que estén mal, <strong>cancelar</strong> los que ya no quieras que
+    tengamos y <strong>oponerte</strong> a que los usemos para algo.
+  </p>
+
+  <p>Buena parte la puedes ejercer tú misma, sin pedirle permiso a nadie:</p>
+
+  <ul>
+    <li><strong>Acceso y rectificación:</strong> en <em>Perfil → Tus datos</em>
+      ves y cambias tu nombre, correo, teléfono, foto y campus.</li>
+    <li><strong>Cancelación:</strong> puedes borrar tus viajes, tus destinos
+      guardados y tus reportes desde su propia pantalla.</li>
+    <li><strong>Oposición:</strong> no compartir tu ubicación es, sencillamente,
+      no iniciar un viaje. Nada la recoge fuera de ese momento.</li>
+  </ul>
+
+  <p>
+    Para <strong>dar de baja tu cuenta entera</strong>, o para lo que no
+    puedas hacer desde la aplicación, escríbenos. Tenemos <strong>20 días
+    hábiles</strong> para responderte y <strong>15 más</strong> para
+    ejecutarlo si procede. Te pediremos algo que acredite que la cuenta es
+    tuya, para no entregarle tus datos a otra persona.
+  </p>
+
+  <h2>Qué hacemos para protegerlos</h2>
+
+  <ul>
+    <li>Las contraseñas se guardan con <strong>Argon2id</strong>, que no se
+      puede revertir.</li>
+    <li>Cada pantalla comprueba en el servidor quién eres antes de
+      enseñarte nada. Esconder un botón no es proteger: lo que protege es
+      que el servidor diga que no.</li>
+    <li>Las cookies de sesión son <code>HttpOnly</code> y
+      <code>SameSite=Lax</code>, y hay protección contra CSRF y contra
+      <em>clickjacking</em>.</li>
+    <li>La clave secreta del sistema vive fuera del código y no se sube al
+      repositorio.</li>
+  </ul>
+
+  <p>
+    Ningún sistema es invulnerable, y este es un proyecto escolar: no ha
+    pasado por una auditoría de seguridad externa.
+  </p>
+
+  <h2>Con quién los compartimos</h2>
+
+  <p>
+    <strong>Con nadie.</strong> No vendemos, alquilamos ni cedemos datos
+    personales, y no hay publicidad ni analítica de terceros.
+  </p>
+
+  <p>
+    Dos servicios externos reciben datos <em>técnicos</em> cuando usas el
+    mapa, porque sin ellos no habría mapa:
+  </p>
+
+  <ul>
+    <li><strong>Esri</strong> sirve las imágenes del mapa.</li>
+    <li><strong>Nominatim</strong> y <strong>OSRM</strong>, de
+      OpenStreetMap, convierten una dirección en coordenadas y calculan el
+      camino a pie.</li>
+  </ul>
+
+  <p>
+    Reciben la zona que estás mirando o la dirección que escribiste, no tu
+    nombre ni tu cuenta. Ninguno recibe tu historial de viajes.
+  </p>
+
+  <h2>Cuánto tiempo los conservamos</h2>
+
+  <ul>
+    <li><strong>Las posiciones de un viaje:</strong> hasta que lo cierras.
+      Entonces se borran.</li>
+    <li><strong>Tu cuenta y tu contenido:</strong> mientras la cuenta exista.</li>
+    <li><strong>Al dar de baja la cuenta</strong> se borran también tus
+      viajes, tus destinos y tus reportes.</li>
+  </ul>
+
+  <h2>Cambios a este aviso</h2>
+
+  <p>
+    Si cambia, se publica aquí con su fecha, y el historial de cambios queda
+    público en el repositorio del proyecto.
+  </p>
+
+  <p class="documento__pie">
+    Campus Seguro es información reportada por la comunidad. No detecta
+    peligro ni garantiza seguridad física.
+  </p>
+</main>
+</body>
+</html>

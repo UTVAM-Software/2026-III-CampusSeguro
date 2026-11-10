@@ -519,6 +519,23 @@ class NadieSeQuedaFueraDeSuPropioInicioTests(BaseConCuentas):
             with self.subTest(pantalla=nombre):
                 self.assertEqual(cliente.get(reverse(nombre)).status_code, 403)
 
+    def test_el_aviso_de_privacidad_se_lee_sin_sesion(self):
+        """
+        La ley lo pide antes de recoger los datos. Uno que solo se lee
+        estando dentro llega tarde para decidir si entras, así que esta ruta
+        es de las pocas sin `login_required`.
+        """
+        respuesta = self.client.get(reverse('privacidad'))
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, 'Aviso de privacidad')
+
+    def test_la_pantalla_de_entrar_enlaza_el_aviso(self):
+        """De nada sirve el aviso si no hay cómo llegar a él antes de entrar."""
+        respuesta = self.client.get(reverse('entrar'))
+
+        self.assertContains(respuesta, reverse('privacidad'))
+
     def test_quien_audita_no_puede_editar_la_cuenta_de_otra_persona(self):
         """
         El agujero que abrió darle la vista ancha de cuentas al auditor.
