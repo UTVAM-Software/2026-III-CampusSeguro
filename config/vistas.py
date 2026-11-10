@@ -21,6 +21,7 @@ from apps.campus.models import Campus, Correccion, PuntoApoyo
 from apps.comunicacion.models import Aviso, Notificacion
 from apps.reportes.models import Reporte
 from apps.usuarios.permisos import PermisoRequeridoMixin
+from apps.viajes.alertas import revisar_vencidos
 from apps.viajes.models import Viaje, ViajeAcompanante
 from config.fechas import hace
 
@@ -43,6 +44,16 @@ class InicioView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
     template_name = "index.html"
 
     def get_context_data(self, **kwargs):
+        # Los viajes a los que se les paso la hora limite, antes de dibujar
+        # nada: si uno venció, quien lo acompaña tiene que ver el aviso en
+        # esta misma pantalla y no en la siguiente que abra.
+        #
+        # Va aqui porque no hay un proceso en segundo plano. Lo que eso
+        # implica -si nadie abre la app, nadie recibe el aviso- esta escrito
+        # en `apps/viajes/alertas.py`, junto al comando que lo arregla el dia
+        # que esto viva en un servidor.
+        revisar_vencidos()
+
         contexto = super().get_context_data(**kwargs)
         usuario = self.request.user
         campus = usuario.campus

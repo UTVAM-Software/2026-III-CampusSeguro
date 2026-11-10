@@ -60,6 +60,74 @@ class Viaje(models.Model):
     def esta_en_curso(self):
         return self.estado == 'en_curso'
 
+    @property
+    def se_paso_la_hora(self):
+        """Si tiene hora límite, sigue en curso y esa hora ya pasó."""
+        return (
+            self.esta_en_curso
+            and self.fecha_expiracion is not None
+            and self.fecha_expiracion < timezone.now()
+        )
+
+    def avisar_que_se_paso_la_hora(self):
+        """
+        Pasa el viaje a «Alerta» y avisa a quien lo acompaña.
+
+        ES LO QUE CONVIERTE "COMPARTO MI UBICACIÓN" EN ALGO QUE SIRVE
+            Hasta ahora el estado `alerta` existía en el modelo y la pantalla
+            del viaje ya sabía dibujarlo, pero nadie lo ponía nunca: la hora
+            límite pasaba y no ocurría nada. Quien aceptaba acompañar se
+            quedaba esperando una alarma que no iba a sonar.
+
+        NO CIERRA EL VIAJE, Y ESO ES DELIBERADO
+            Cerrar borra las posiciones, y las posiciones son justo lo que
+            hace falta cuando alguien no ha llegado. Una alerta dice «ve a
+            mirar»; borrar el rastro en ese momento sería lo contrario de
+            ayudar.
+
+        NO DICE QUE HAYA PASADO ALGO
+            Dice que se acabó el tiempo. Esta aplicación no sabe si alguien
+            está en peligro, y escribirlo sería afirmar algo que no sabe.
+
+        Devuelve a cuántas personas avisó. Solo actúa una vez: al cambiar de
+        estado deja de estar «en curso», así que la siguiente revisión ya no
+        lo encuentra.
+        """
+        from apps.comunicacion.models import Notificacion
+
+        if not self.se_paso_la_hora:
+            return 0
+
+        self.estado = 'alerta'
+        self.save(update_fields=['estado'])
+
+        hora = timezone.localtime(self.fecha_expiracion).strftime('%H:%M')
+        avisados = [a.acompanante for a in self.acompanantes_aceptados]
+
+        for quien in avisados:
+            Notificacion.objects.create(
+                usuario=quien,
+                titulo=f'{self.usuario} no ha confirmado que llegó',
+                mensaje=(
+                    f'Su hora límite eran las {hora} y todavía no confirma '
+                    f'que llegó a {self.destino}. Puedes ver su última '
+                    f'ubicación en el viaje.'
+                ),
+            )
+
+        # También a quien viaja: lo más probable es que haya llegado y se le
+        # olvidara decirlo, y eso se arregla solo con recordárselo.
+        Notificacion.objects.create(
+            usuario=self.usuario,
+            titulo='¿Llegaste bien?',
+            mensaje=(
+                f'Se pasó la hora límite de tu viaje a {self.destino}. '
+                f'Confírmalo para que deje de compartirse tu ubicación.'
+            ),
+        )
+
+        return len(avisados)
+
     def cerrar(self, estado):
         """
         Termina el viaje y borra por dónde pasaste.
