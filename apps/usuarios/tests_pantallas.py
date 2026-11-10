@@ -462,6 +462,74 @@ class NadieSeQuedaFueraDeSuPropioInicioTests(BaseConCuentas):
             with self.subTest(pantalla=nombre):
                 self.assertEqual(cliente.get(reverse(nombre)).status_code, 403)
 
+    def test_quien_audita_no_puede_editar_la_cuenta_de_otra_persona(self):
+        """
+        El agujero que abrió darle la vista ancha de cuentas al auditor.
+
+        Lee todas las fichas, y además tiene `change_usuario` para su propio
+        perfil. Mientras el recorte de leer y el de escribir fueron el mismo,
+        esa llave valía para la cuenta de cualquiera: se podía cambiar el
+        nombre y el correo de otra persona desde un rol llamado "solo
+        lectura".
+
+        Se comprueba con un POST y no solo abriendo la pantalla: lo que
+        importa no es que el formulario no se pinte, sino que la base no
+        cambie.
+        """
+        auditor = self.cuenta_de('solo_lectura')
+        antes = (self.ana.nombre, self.ana.correo)
+        url = reverse('usuario-update', args=[self.ana.pk])
+
+        cliente = self.entrar(auditor)
+        abrir = cliente.get(url)
+        cliente.post(url, {
+            'correo': 'secuestrada@x.edu', 'nombre': 'CAMBIADO',
+            'rol': 'estudiante', 'campus': self.campus.pk, 'activo': 'on',
+        })
+
+        self.ana.refresh_from_db()
+
+        self.assertEqual(abrir.status_code, 404)
+        self.assertEqual((self.ana.nombre, self.ana.correo), antes)
+
+    def test_quien_audita_si_ve_la_ficha_de_otra_persona(self):
+        """Leer sí; es la otra mitad, y sin ella no auditaría nada."""
+        auditor = self.cuenta_de('solo_lectura')
+
+        respuesta = self.entrar(auditor).get(
+            reverse('usuario-detail', args=[self.ana.pk])
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+
+    def test_quien_audita_ve_todas_las_confirmaciones(self):
+        """
+        La única lista que se quedó recortada cuando se abrieron las demás.
+        """
+        reporte = Reporte.objects.create(
+            usuario=self.ana, campus=self.campus, tipo='obras',
+            descripcion='x', latitud=20.1, longitud=-98.7,
+        )
+        ReporteConfirmacion.objects.create(
+            reporte=reporte, usuario=self.beto, confirma=True,
+        )
+
+        auditor = self.cuenta_de('solo_lectura')
+        lista = self.entrar(auditor).get(
+            reverse('confirmacion-list')
+        ).context['object_list']
+
+        self.assertEqual(len(lista), ReporteConfirmacion.objects.count())
+
+    def test_al_externo_no_se_le_ofrece_la_campana(self):
+        """
+        Lleva a notificaciones, que ese rol no puede abrir. Estaba en la
+        cabecera de las dos maquetaciones, la de escritorio y la del móvil.
+        """
+        respuesta = self.entrar(self.cuenta_de('externo')).get('/')
+
+        self.assertNotContains(respuesta, reverse('notificacion-list'))
+
     def test_a_quien_audita_no_se_le_pintan_botones_de_crear(self):
         """
         Un boton que responde 403 es la misma puerta pintada que la barra, y

@@ -125,7 +125,17 @@ class ConfirmacionListView(PermisoRequeridoMixin, ListView):
     model = ReporteConfirmacion
 
     def get_queryset(self):
-        """Las respuestas propias. Lo que votó cada quien es suyo."""
+        """
+        Las respuestas propias. Lo que votó cada quien es suyo.
+
+        Quien audita las ve todas: es la única lista que se le quedó
+        recortada cuando se le abrieron las demás.
+        """
+        if self.request.user.puede_auditar:
+            return ReporteConfirmacion.objects.select_related(
+                'usuario', 'reporte'
+            )
+
         return ReporteConfirmacion.objects.filter(usuario=self.request.user)
 
     def get_context_data(self, **kwargs):
