@@ -28,6 +28,7 @@ from django.contrib.auth.models import Group, Permission
 # view_, add_, change_ y delete_.
 ADMINISTRAR_CAMPUS = 'usuarios.administrar_campus'
 ADMINISTRAR_SISTEMA = 'usuarios.administrar_sistema'
+AUDITAR_SISTEMA = 'usuarios.auditar_sistema'
 
 
 def _crud(app, modelo, *acciones):
@@ -88,7 +89,14 @@ PERMISOS_EXTERNO = [
 
 #: Solo lectura: ve TODO el sistema, pero no puede agregar, modificar ni
 #: eliminar nada. Por eso solo lleva permisos `view_`.
+#:
+#: `AUDITAR_SISTEMA` es lo que convierte "tiene permiso para ver" en "ve de
+#: verdad": sin él, `get_queryset()` le recorta cada lista a su campus y a lo
+#: suyo, y acababa viendo lo mismo que un estudiante. `change_usuario` es
+#: para su propia ficha, que cada vista limita a la cuenta que mira.
 PERMISOS_SOLO_LECTURA = [
+    AUDITAR_SISTEMA,
+    *_crud('usuarios', 'usuario', 'change'),
     *_crud('campus', 'campus', 'view'),
     *_crud('campus', 'puntoapoyo', 'view'),
     *_crud('campus', 'correccion', 'view'),

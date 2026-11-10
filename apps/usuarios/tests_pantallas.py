@@ -19,9 +19,13 @@ NO SUSTITUYE A LAS PRUEBAS DE PERMISOS
 from apps.campus.models import Campus, PuntoApoyo
 from apps.comunicacion.models import Aviso, Notificacion
 from apps.reportes.models import Reporte, ReporteConfirmacion
-from apps.viajes.models import UbicacionViaje, Viaje, ViajeAcompanante
+from django.urls import reverse
 
-from .tests_base import BaseConCuentas
+from apps.viajes.models import UbicacionViaje, Viaje, ViajeAcompanante
+from config.navegacion import construir
+
+from .models import Usuario
+from .tests_base import CLAVE, BaseConCuentas
 
 
 class PantallasQueCarganTests(BaseConCuentas):
@@ -398,3 +402,79 @@ class PanelTests(BaseConCuentas):
     def test_sale_en_la_navegacion_solo_de_quien_administra(self):
         self.assertContains(self.entrar(self.jefa).get('/'), 'href="/panel/"')
         self.assertNotContains(self.entrar(self.ana).get('/'), 'href="/panel/"')
+
+
+class NadieSeQuedaFueraDeSuPropioInicioTests(BaseConCuentas):
+    """
+    La pantalla de inicio es a donde cae cualquiera al iniciar sesión
+    (`LOGIN_REDIRECT_URL`), así que ningún rol puede recibir un 403 ahí.
+
+    Pasó con el usuario externo: inicio pedía `reportes.view_reporte`, que ese
+    rol no tiene. Iniciaba sesión y lo primero que veía era "esto no es para
+    tu cuenta", sin poder ir a ninguna parte.
+    """
+
+    def cuenta_de(self, rol):
+        return Usuario.objects.create_user(
+            correo=f'{rol}@x.edu', nombre=rol, password=CLAVE,
+            campus=self.campus, rol=rol,
+        )
+
+    def test_los_cinco_roles_entran_al_inicio(self):
+        for rol, _ in Usuario.ROLES:
+            with self.subTest(rol=rol):
+                respuesta = self.entrar(self.cuenta_de(rol)).get('/')
+
+                self.assertEqual(respuesta.status_code, 200)
+
+    def test_quien_audita_ve_las_listas_enteras(self):
+        """
+        "Acceso a todos los elementos de todo el sistema, en modo lectura".
+
+        Tener los permisos `view_` no bastaba: cada vista recorta además con
+        `get_queryset()`, por campus o por dueño, así que la cuenta de solo
+        lectura veía lo mismo que un estudiante. Lo que lo cambia es el
+        permiso `auditar_sistema`.
+        """
+        otro = Reporte.objects.create(
+            usuario=self.beto, campus=self.otro_campus, tipo='obras',
+            descripcion='De otro campus', latitud=19.4, longitud=-99.1,
+        )
+        Viaje.objects.create(usuario=self.beto, origen='A', destino='B')
+
+        auditor = self.cuenta_de('solo_lectura')
+
+        reportes = self.entrar(auditor).get('/reportes/').context['object_list']
+        viajes = self.entrar(auditor).get('/viajes/').context['object_list']
+
+        self.assertIn(otro, reportes)
+        self.assertEqual(len(viajes), Viaje.objects.count())
+
+    def test_quien_audita_no_escribe_nada(self):
+        """
+        Lo de "modo lectura" es la otra mitad, y es la que importa: ve el
+        sistema entero y no puede tocar una sola fila.
+        """
+        cliente = self.entrar(self.cuenta_de('solo_lectura'))
+
+        for nombre in ('reporte-create', 'punto-create', 'aviso-create',
+                       'usuario-create', 'grupo-create'):
+            with self.subTest(pantalla=nombre):
+                self.assertEqual(cliente.get(reverse(nombre)).status_code, 403)
+
+    def test_la_barra_no_ofrece_puertas_que_se_cierran_en_la_cara(self):
+        """
+        Cada área declara el permiso de la vista a la que lleva. Si alguien
+        añade una con el permiso equivocado, aquí se ve: la cuenta la vería
+        en la barra y recibiría un 403 al tocarla.
+        """
+        for rol, _ in Usuario.ROLES:
+            cuenta = self.cuenta_de(rol)
+            cliente = self.entrar(cuenta)
+
+            for area in construir(cuenta):
+                with self.subTest(rol=rol, area=area['clave']):
+                    self.assertNotEqual(
+                        cliente.get(area['url']).status_code, 403,
+                        f"la barra le ofrece {area['etiqueta']} a {rol} y da 403",
+                    )

@@ -76,6 +76,8 @@ escrita en ese archivo (`CLAVE_DE_PRUEBA`):
 | `lady@gmail.com` | Estudiante | el día a día |
 | `admin@gmail.com` | Administrador de campus | panel, avisos, puntos de apoyo |
 | `alexis@gmail.com` | Superadministrador | además, campus y cuentas |
+| `externo@gmail.com` | Usuario externo | el perfil del visitante: lo público y nada más |
+| `lectura@gmail.com` | Solo lectura | el sistema entero, sin poder tocar nada |
 
 No son de nadie: viven solo en la base local, que no se sube al repositorio.
 
@@ -191,6 +193,8 @@ Al guardar una cuenta, entra sola en el grupo de su rol.
 | **Estudiante** | reportar, viajar, acompañar, ver el mapa y los puntos de apoyo, avisar de que un punto está mal |
 | **Administrador de campus** | lo anterior y, de **su** campus: el panel, los avisos, los puntos de apoyo, revisar reportes y la cola de correcciones |
 | **Superadministrador** | lo anterior y, del sistema: los campus, las cuentas, y los **grupos y permisos** (Panel → Grupos / Permisos). Tiene acceso a `/admin/` |
+| **Usuario externo** | quien no es de la comunidad: consultar campus, puntos de apoyo y avisos, y editar su propia ficha. Nada más |
+| **Solo lectura** | ver **todo** el sistema, de todos los campus, sin poder agregar, modificar ni eliminar nada |
 
 Los permisos de cada grupo se cambian desde la app (Panel → Grupos), y se
 pueden crear grupos extra ("Brigada de seguridad") o dar permisos sueltos a
@@ -204,6 +208,25 @@ Tres cerrojos, en este orden (`apps/usuarios/permisos.py`):
 3. **`get_queryset()`** — si la cosa es de otra persona o de otro campus,
    **404**: un 403 confirmaría que ese viaje existe, y quién viaja a dónde no
    se le filtra a quien no va en él. Ni siquiera a quien administra.
+
+### Administrar y auditar no son lo mismo
+
+Tener el permiso `view_` no basta para ver: el tercer cerrojo recorta además
+por campus y por dueño. Una cuenta de solo lectura con todos los `view_`
+acababa viendo lo mismo que un estudiante.
+
+Lo que lo cambia es un cuarto permiso propio, **`auditar_sistema`**, que no
+abre ningún `add_`, `change_` ni `delete_`: solo le dice a los filtros que a
+esa cuenta la lista se le enseña entera.
+
+Y es un permiso aparte de `administrar_campus` a propósito, porque ese
+también abre acciones que **escriben** —dar por atendida una corrección, por
+ejemplo—, y un rol que mira no puede llevar esa llave.
+
+Por eso quien administra su campus **sigue sin ver los viajes de nadie**: los
+viajes, las ubicaciones, los destinos guardados y las notificaciones solo se
+abren con `auditar_sistema`. La administración gestiona el campus; la
+auditoría mira el sistema y no toca nada.
 
 La autorización está siempre en el servidor. Las plantillas esconden puertas
 (`{% if perms.campus.add_campus %}`) para no ofrecer lo que no se puede

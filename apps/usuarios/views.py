@@ -90,15 +90,28 @@ class SoloYoOSuperadminMixin:
     """
 
     def get_queryset(self):
-        if self.request.user.es_superadmin:
+        if self.request.user.es_superadmin or self.request.user.puede_auditar:
             return Usuario.objects.all()
 
         return Usuario.objects.filter(pk=self.request.user.pk)
 
 
 class UsuarioListView(PermisoRequeridoMixin, ListView):
+    """
+    El directorio de la comunidad: correos y telefonos de todo el mundo.
+
+    Por eso no basta con `view_usuario`, que lo tiene cualquiera para su
+    propia ficha. Lo abren quien administra el sistema y quien audita, y la
+    segunda llave se comprueba abajo porque `permission_required` exigiria
+    las dos juntas.
+    """
+
     permission_required = 'usuarios.administrar_sistema'
     model = Usuario
+
+    def has_permission(self):
+        usuario = self.request.user
+        return usuario.es_superadmin or usuario.puede_auditar
 
 
 class UsuarioDetailView(PermisoRequeridoMixin, SoloYoOSuperadminMixin, DetailView):

@@ -24,7 +24,7 @@ class SoloMiCampusMixin:
     def get_queryset(self):
         avisos = Aviso.objects.all()
 
-        if self.request.user.es_admin:
+        if self.request.user.ve_todo:
             return avisos
 
         return avisos.filter(campus=self.request.user.campus)
@@ -91,6 +91,9 @@ class SoloMisNotificacionesMixin:
     """
 
     def get_queryset(self):
+        if self.request.user.puede_auditar:
+            return Notificacion.objects.all()
+
         return Notificacion.objects.filter(usuario=self.request.user)
 
 

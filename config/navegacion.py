@@ -27,35 +27,40 @@ ESCONDER UN ENLACE NO ES AUTORIZAR
     La entrada de Usuarios solo sale si el rol lo permite, pero eso es
     únicamente la interfaz: quien escriba la dirección se encuentra el 403 que
     pone la vista. Lo de aquí es no ofrecer puertas que se cierran en la cara.
+
+CADA ÁREA DICE QUÉ PERMISO PIDE, Y ES EL MISMO QUE PIDE SU VISTA
+    Con la lista fija, un usuario externo veía las cinco pestañas y cuatro le
+    respondían 403 —incluida Inicio, que es a donde cae al entrar—. La barra
+    ofrece ahora solo lo que esa cuenta puede abrir de verdad.
+
+    El permiso que se escribe aquí tiene que ser el `permission_required` de
+    la vista a la que lleva. Si no coinciden, vuelve a haber puertas pintadas.
 """
 
 from django.urls import reverse
 
-# (clave, etiqueta, nombre de ruta, icono, destacada)
+# (clave, etiqueta, nombre de ruta, icono, destacada, permisos)
 #
 # `destacada` es la del centro de la barra del móvil, la que se dibuja como un
 # botón redondo: reportar algo es la acción que tiene que estar siempre a un
 # toque, no a tres.
+#
+# `permisos` es una tupla y basta con tener UNO. El panel lo abren dos llaves
+# distintas —quien administra su campus y quien audita el sistema—, igual que
+# en su vista.
 AREAS = [
-    ("inicio", "Inicio", "index", "inicio", False),
-    ("mapa", "Mapa", "mapa", "mapa", False),
-    ("reportar", "Reportar", "reporte-create", "reportar", True),
-    ("viajes", "Viajes", "viaje-list", "viajes", False),
-    ("perfil", "Perfil", "perfil", "perfil", False),
-]
-
-SOLO_ADMIN = [
-    ("panel", "Panel", "panel", "escudo", False),
+    ("inicio", "Inicio", "index", "inicio", False, ("campus.view_campus",)),
+    ("mapa", "Mapa", "mapa", "mapa", False, ("reportes.view_reporte",)),
+    ("reportar", "Reportar", "reporte-create", "reportar", True, ("reportes.add_reporte",)),
+    ("viajes", "Viajes", "viaje-list", "viajes", False, ("viajes.view_viaje",)),
+    ("perfil", "Perfil", "perfil", "perfil", False, ("usuarios.change_usuario",)),
+    ("panel", "Panel", "panel", "escudo", False,
+     ("usuarios.administrar_campus", "usuarios.auditar_sistema")),
 ]
 
 
 def construir(usuario):
     """La lista que se dibuja, según quién esté mirando."""
-    entradas = list(AREAS)
-
-    if getattr(usuario, "es_admin", False):
-        entradas += SOLO_ADMIN
-
     return [
         {
             "clave": clave,
@@ -64,5 +69,6 @@ def construir(usuario):
             "icono": icono,
             "destacada": destacada,
         }
-        for clave, etiqueta, ruta, icono, destacada in entradas
+        for clave, etiqueta, ruta, icono, destacada, permisos in AREAS
+        if any(usuario.has_perm(permiso) for permiso in permisos)
     ]

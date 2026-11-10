@@ -35,24 +35,40 @@ AQUÍ HABÍA UN "TODO LO DEMÁS" CON NUEVE BOTONES
 </header>
 
 {# --------------------------- La acción principal ------------------------ #}
-<div class="tarjeta destacada">
-  <h2>¿A dónde vas?</h2>
-  <p class="destacada__texto">
-    Planifica tu trayecto y consulta las condiciones registradas en el camino.
-  </p>
-  <div class="destacada__botones">
-    <a class="boton destacada__principal" href="{% url 'viaje-create' %}">Planificar viaje</a>
-    <a class="boton destacada__secundario" href="{% url 'acompanante-list' %}">Acompáñame</a>
+{% comment %}
+Cada bloque se pide con el permiso de la pantalla a la que lleva. Un usuario
+externo no planifica viajes ni reporta: ofrecérselo aquí sería un botón que
+le responde 403.
+{% endcomment %}
+{% if perms.viajes.add_viaje %}
+  <div class="tarjeta destacada">
+    <h2>¿A dónde vas?</h2>
+    <p class="destacada__texto">
+      Planifica tu trayecto y consulta las condiciones registradas en el camino.
+    </p>
+    <div class="destacada__botones">
+      <a class="boton destacada__principal" href="{% url 'viaje-create' %}">Planificar viaje</a>
+      <a class="boton destacada__secundario" href="{% url 'acompanante-list' %}">Acompáñame</a>
+    </div>
   </div>
-</div>
+{% endif %}
 
 <div class="accesos">
-  <a class="boton secundario" href="{% url 'mapa' %}">
-    {% include '_icono.html' with nombre='lupa_mapa' %} Ver el mapa
-  </a>
-  <a class="boton secundario" href="{% url 'reporte-create' %}">
-    {% include '_icono.html' with nombre='reportar' %} Reportar situación
-  </a>
+  {% if perms.reportes.view_reporte %}
+    <a class="boton secundario" href="{% url 'mapa' %}">
+      {% include '_icono.html' with nombre='lupa_mapa' %} Ver el mapa
+    </a>
+  {% endif %}
+  {% if perms.reportes.add_reporte %}
+    <a class="boton secundario" href="{% url 'reporte-create' %}">
+      {% include '_icono.html' with nombre='reportar' %} Reportar situación
+    </a>
+  {% endif %}
+  {% if perms.campus.view_puntoapoyo %}
+    <a class="boton secundario" href="{% url 'punto-list' %}">
+      {% include '_icono.html' with nombre='puntos_apoyo' %} Puntos de apoyo
+    </a>
+  {% endif %}
 </div>
 
 {# ------------------------------- Avisos --------------------------------- #}
@@ -78,6 +94,7 @@ AQUÍ HABÍA UN "TODO LO DEMÁS" CON NUEVE BOTONES
 {% endif %}
 
 {# ---------------------------- Viajes activos ---------------------------- #}
+{% if perms.viajes.view_viaje %}
 {% comment %}
 Entra el viaje propio en curso y los que esta persona acompaña. Dejar fuera
 los que acompañas de una tarjeta titulada "Viajes activos" sería mentir: hay
@@ -120,8 +137,10 @@ alguien contando contigo ahora mismo.
     {% include '_estado_vacio.html' with icono='viajes' titulo='No tienes viajes en curso' texto='Planifica un trayecto y comparte tu ubicación con quien tú elijas mientras dure.' accion_url=ir_a_planificar accion_texto='Planificar viaje' only %}
   {% endif %}
 </div>
+{% endif %}
 
 {# ------------------------ Condiciones registradas ----------------------- #}
+{% if perms.reportes.view_reporte %}
 <section class="seccion" aria-labelledby="titulo-condiciones">
   <h2 id="titulo-condiciones">Condiciones registradas cerca</h2>
 
@@ -152,8 +171,10 @@ alguien contando contigo ahora mismo.
     </div>
   {% endif %}
 </section>
+{% endif %}
 
 {# --------------------------- Puntos de apoyo ---------------------------- #}
+{% if perms.campus.view_puntoapoyo %}
 <section class="seccion" aria-labelledby="titulo-puntos">
   <h2 id="titulo-puntos">Puntos de apoyo</h2>
 
@@ -184,4 +205,5 @@ alguien contando contigo ahora mismo.
     </div>
   {% endif %}
 </section>
+{% endif %}
 {% endblock %}

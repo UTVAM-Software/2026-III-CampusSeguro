@@ -65,7 +65,7 @@ class PuntosDeMiCampusMixin:
     def get_queryset(self):
         puntos = PuntoApoyo.objects.select_related('campus')
 
-        if self.request.user.es_admin:
+        if self.request.user.ve_todo:
             return puntos
 
         return puntos.filter(campus=self.request.user.campus, activo=True)
@@ -162,7 +162,22 @@ class AvisarDePuntoView(PermisoRequeridoMixin, View):
         return redirect('punto-detail', pk=punto.pk)
 
 
-class CorreccionListView(PermisoRequeridoMixin, ListView):
+class SoloDeMiCampusMixin:
+    """
+    El recorte por campus de los avisos sobre puntos de apoyo.
+
+    Quien audita no lleva recorte: su rol es ver el sistema entero. Para los
+    demas, los avisos de un punto de otro campus no existen.
+    """
+
+    def del_campus(self):
+        if self.request.user.ve_todo:
+            return {}
+
+        return {'punto__campus': self.request.user.campus}
+
+
+class CorreccionListView(PermisoRequeridoMixin, SoloDeMiCampusMixin, ListView):
     """La cola de avisos, para quien administra."""
 
     permission_required = 'campus.view_correccion'
@@ -172,7 +187,8 @@ class CorreccionListView(PermisoRequeridoMixin, ListView):
     def get_queryset(self):
         return (
             Correccion.objects
-            .filter(atendida=False, punto__campus=self.request.user.campus)
+            .filter(atendida=False)
+            .filter(**self.del_campus())
             .select_related('punto', 'usuario')
         )
 
@@ -184,7 +200,8 @@ class CorreccionListView(PermisoRequeridoMixin, ListView):
         # de baja.
         ctx['atendidas'] = (
             Correccion.objects
-            .filter(atendida=True, punto__campus=self.request.user.campus)
+            .filter(atendida=True)
+            .filter(**self.del_campus())
             .select_related('punto', 'usuario')[:10]
         )
         return ctx
@@ -223,13 +240,13 @@ class AtenderCorreccionView(PermisoRequeridoMixin, View):
         messages.success(request, 'Aviso revisado.')
         return redirect('correccion-list')
 
-class CorreccionesDeMiCampusMixin:
+class CorreccionesDeMiCampusMixin(SoloDeMiCampusMixin):
     """Solo los avisos de puntos de TU campus. Los de otro campus dan 404."""
 
     def get_queryset(self):
         return (
             Correccion.objects
-            .filter(punto__campus=self.request.user.campus)
+            .filter(**self.del_campus())
             .select_related('punto', 'usuario')
         )
 

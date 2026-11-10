@@ -25,16 +25,31 @@ from apps.viajes.models import Viaje, ViajeAcompanante
 
 
 class InicioView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
-    permission_required = 'reportes.view_reporte'
+    """
+    La pantalla a la que cae cualquiera al entrar (`LOGIN_REDIRECT_URL`).
+
+    PIDE EL PERMISO QUE TIENEN TODAS LAS CUENTAS
+        Pedía `reportes.view_reporte`, que un usuario externo no tiene: se
+        encontraba un 403 nada más iniciar sesión, antes de poder ir a
+        ninguna parte. `campus.view_campus` lo tienen los cinco roles.
+
+        Cada trozo de la pantalla se pide aparte, con el mismo permiso que
+        pide la lista a la que lleva. Lo que una cuenta no puede abrir,
+        tampoco se le asoma aquí.
+    """
+
+    permission_required = 'campus.view_campus'
     template_name = "index.html"
 
     def get_context_data(self, **kwargs):
         contexto = super().get_context_data(**kwargs)
         usuario = self.request.user
         campus = usuario.campus
+        puede = usuario.has_perm
 
         contexto["viaje_en_curso"] = (
             Viaje.objects.filter(usuario=usuario, estado="en_curso").first()
+            if puede("viajes.view_viaje") else None
         )
 
         # Los viajes que esta persona acompaña también están activos: dejarlos
@@ -43,6 +58,7 @@ class InicioView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
             ViajeAcompanante.objects
             .filter(acompanante=usuario, estado="aceptado", viaje__estado="en_curso")
             .select_related("viaje", "viaje__usuario")
+            if puede("viajes.view_viaje") else []
         )
 
         hoy = timezone.localdate()
@@ -54,7 +70,7 @@ class InicioView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
             .filter(campus=campus, activo=True)
             .filter(Q(fecha_expiracion__isnull=True) | Q(fecha_expiracion__gte=hoy))
             .order_by("-fecha_publicacion")[:2]
-            if campus else []
+            if campus and puede("comunicacion.view_aviso") else []
         )
 
         contexto["reportes"] = (
@@ -62,16 +78,18 @@ class InicioView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
             .filter(campus=campus)
             .select_related("usuario")
             .order_by("-fecha_creacion")[:3]
-            if campus else []
+            if campus and puede("reportes.view_reporte") else []
         )
 
         contexto["puntos"] = (
-            PuntoApoyo.objects.filter(campus=campus, activo=True)[:3] if campus else []
+            PuntoApoyo.objects.filter(campus=campus, activo=True)[:3]
+            if campus and puede("campus.view_puntoapoyo") else []
         )
 
-        contexto["sin_leer"] = Notificacion.objects.filter(
-            usuario=usuario, leida=False
-        ).count()
+        contexto["sin_leer"] = (
+            Notificacion.objects.filter(usuario=usuario, leida=False).count()
+            if puede("comunicacion.view_notificacion") else 0
+        )
 
         return contexto
 
@@ -187,10 +205,23 @@ class PanelView(PermisoRequeridoMixin, TemplateView):
         Las cifras salen de los reportes de su campus. Un panel con los
         numeros de todas las universidades no le sirve para nada a quien
         administra una, y de paso diria cuantas hay y como les va.
+
+        La excepcion es quien audita: su trabajo es mirar el sistema entero,
+        asi que a esa cuenta no se le recorta por campus.
+
+    DOS LLAVES ABREN ESTA PUERTA
+        `administrar_campus` y `auditar_sistema`. No se pueden poner las dos
+        en `permission_required` -Django las exigiria juntas-, asi que la
+        comprobacion se escribe abajo. El atributo se queda para que siga a
+        la vista de quien lea la clase cual es la llave principal.
     """
 
     permission_required = 'usuarios.administrar_campus'
     template_name = "panel.html"
+
+    def has_permission(self):
+        usuario = self.request.user
+        return usuario.es_admin or usuario.puede_auditar
 
     #: Cuantos dias compara la tendencia contra los mismos de antes.
     DIAS = 7
