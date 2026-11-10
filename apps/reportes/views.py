@@ -28,7 +28,7 @@ class SoloMiCampusMixin:
     def get_queryset(self):
         reportes = Reporte.objects.all()
 
-        if self.request.user.es_admin:
+        if self.request.user.ve_todo:
             return reportes
 
         return reportes.filter(campus=self.request.user.campus)
@@ -40,7 +40,7 @@ class SoloMiosOAdminMixin(SoloMiCampusMixin):
     def get_queryset(self):
         reportes = super().get_queryset()
 
-        if self.request.user.es_admin:
+        if self.request.user.ve_todo:
             return reportes
 
         return reportes.filter(usuario=self.request.user)
@@ -132,7 +132,7 @@ class ConfirmacionListView(PermisoRequeridoMixin, ListView):
         ctx = super().get_context_data(**kwargs)
         reportes = Reporte.objects.all()
 
-        if not self.request.user.es_admin:
+        if not self.request.user.ve_todo:
             reportes = reportes.filter(campus=self.request.user.campus)
 
         ctx['reportes'] = (

@@ -28,6 +28,9 @@ def viajes_que_puede_ver(usuario):
     ha dicho que sí no se le enseña nada. Invitar a alguien no puede ser una
     forma de que te vea la ubicación sin que tú lo sepas.
     """
+    if usuario.puede_auditar:
+        return Viaje.objects.all()
+
     return Viaje.objects.filter(
         Q(usuario=usuario)
         | Q(acompanantes__acompanante=usuario, acompanantes__estado='aceptado')
@@ -50,6 +53,9 @@ class SoloViajesPropiosMixin:
     """Solo los propios. Acompañar deja mirar, no cambiar ni borrar."""
 
     def get_queryset(self):
+        if self.request.user.puede_auditar:
+            return Viaje.objects.all()
+
         return Viaje.objects.filter(usuario=self.request.user)
 
 
@@ -322,6 +328,10 @@ class SoloMisAcompanantesMixin:
 
     def get_queryset(self):
         usuario = self.request.user
+
+        if usuario.puede_auditar:
+            return ViajeAcompanante.objects.all()
+
         return ViajeAcompanante.objects.filter(
             Q(viaje__usuario=usuario) | Q(acompanante=usuario)
         ).distinct()
@@ -337,6 +347,9 @@ class SoloEnMisViajesMixin:
     """
 
     def get_queryset(self):
+        if self.request.user.puede_auditar:
+            return ViajeAcompanante.objects.all()
+
         return ViajeAcompanante.objects.filter(viaje__usuario=self.request.user)
 
     def get_form_kwargs(self):
@@ -461,6 +474,9 @@ class SoloMisDestinosMixin:
     """
 
     def get_queryset(self):
+        if self.request.user.puede_auditar:
+            return DestinoGuardado.objects.all()
+
         return DestinoGuardado.objects.filter(usuario=self.request.user)
 
 

@@ -39,18 +39,23 @@ CADA ÁREA DICE QUÉ PERMISO PIDE, Y ES EL MISMO QUE PIDE SU VISTA
 
 from django.urls import reverse
 
-# (clave, etiqueta, nombre de ruta, icono, destacada, permiso)
+# (clave, etiqueta, nombre de ruta, icono, destacada, permisos)
 #
 # `destacada` es la del centro de la barra del móvil, la que se dibuja como un
 # botón redondo: reportar algo es la acción que tiene que estar siempre a un
 # toque, no a tres.
+#
+# `permisos` es una tupla y basta con tener UNO. El panel lo abren dos llaves
+# distintas —quien administra su campus y quien audita el sistema—, igual que
+# en su vista.
 AREAS = [
-    ("inicio", "Inicio", "index", "inicio", False, "campus.view_campus"),
-    ("mapa", "Mapa", "mapa", "mapa", False, "reportes.view_reporte"),
-    ("reportar", "Reportar", "reporte-create", "reportar", True, "reportes.add_reporte"),
-    ("viajes", "Viajes", "viaje-list", "viajes", False, "viajes.view_viaje"),
-    ("perfil", "Perfil", "perfil", "perfil", False, "usuarios.change_usuario"),
-    ("panel", "Panel", "panel", "escudo", False, "usuarios.administrar_campus"),
+    ("inicio", "Inicio", "index", "inicio", False, ("campus.view_campus",)),
+    ("mapa", "Mapa", "mapa", "mapa", False, ("reportes.view_reporte",)),
+    ("reportar", "Reportar", "reporte-create", "reportar", True, ("reportes.add_reporte",)),
+    ("viajes", "Viajes", "viaje-list", "viajes", False, ("viajes.view_viaje",)),
+    ("perfil", "Perfil", "perfil", "perfil", False, ("usuarios.change_usuario",)),
+    ("panel", "Panel", "panel", "escudo", False,
+     ("usuarios.administrar_campus", "usuarios.auditar_sistema")),
 ]
 
 
@@ -64,6 +69,6 @@ def construir(usuario):
             "icono": icono,
             "destacada": destacada,
         }
-        for clave, etiqueta, ruta, icono, destacada, permiso in AREAS
-        if usuario.has_perm(permiso)
+        for clave, etiqueta, ruta, icono, destacada, permisos in AREAS
+        if any(usuario.has_perm(permiso) for permiso in permisos)
     ]

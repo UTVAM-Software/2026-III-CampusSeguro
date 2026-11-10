@@ -143,6 +143,8 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
              'Puede administrar su campus (panel, avisos, puntos de apoyo y reportes)'),
             ('administrar_sistema',
              'Puede administrar el sistema (campus, cuentas, grupos y permisos)'),
+            ('auditar_sistema',
+             'Puede ver todo el sistema, de todos los campus, sin modificar nada'),
         ]
 
     def __str__(self):
@@ -237,6 +239,47 @@ class Usuario(AbstractBaseUser, PermissionsMixin):
         `usuarios.administrar_sistema`.
         """
         return self.has_perm('usuarios.administrar_sistema')
+
+    @property
+    def puede_auditar(self):
+        """
+        Quién ve TODO el sistema, de todos los campus, sin tocar nada.
+
+        POR QUÉ NO BASTABA CON DARLE LOS PERMISOS `view_`
+            Tener `view_reporte` no enseña los reportes de otro campus: cada
+            vista filtra además con `get_queryset()`, por campus o por dueño.
+            Una cuenta de solo lectura con todos los `view_` veía lo mismo
+            que un estudiante —los suyos y los de su campus—, que es lo
+            contrario de lo que su nombre promete.
+
+        POR QUÉ UN PERMISO PROPIO Y NO `administrar_campus`
+            Ese permiso abre también las acciones que escriben: dar por
+            atendida una corrección, por ejemplo. Un rol que mira no puede
+            llevar la llave de las que modifican.
+
+        LO QUE ESTE PERMISO ABRE, LO ABRE PARA LEER
+            No añade ningún `add_`, `change_` ni `delete_`. Quien lo tiene
+            entra a las listas y a las fichas; los formularios de crear,
+            editar y borrar le siguen respondiendo 403.
+        """
+        return self.has_perm('usuarios.auditar_sistema')
+
+    @property
+    def ve_todo(self):
+        """
+        Si a esta cuenta las listas se le enseñan enteras.
+
+        Es lo que preguntan los `get_queryset()` antes de recortar por campus
+        o por dueño. Lo cumplen quien administra —que ya lo hacía— y quien
+        audita. Preguntar aquí y no en cada vista evita que una lista nueva
+        se olvide de uno de los dos.
+
+        VER TODO NO ES PODER TOCAR TODO
+            Esto decide qué filas salen, nada más. Quién puede escribirlas lo
+            siguen decidiendo los permisos `add_`, `change_` y `delete_` de
+            cada vista.
+        """
+        return self.es_admin or self.puede_auditar
 
     @property
     def is_active(self):

@@ -205,10 +205,23 @@ class PanelView(PermisoRequeridoMixin, TemplateView):
         Las cifras salen de los reportes de su campus. Un panel con los
         numeros de todas las universidades no le sirve para nada a quien
         administra una, y de paso diria cuantas hay y como les va.
+
+        La excepcion es quien audita: su trabajo es mirar el sistema entero,
+        asi que a esa cuenta no se le recorta por campus.
+
+    DOS LLAVES ABREN ESTA PUERTA
+        `administrar_campus` y `auditar_sistema`. No se pueden poner las dos
+        en `permission_required` -Django las exigiria juntas-, asi que la
+        comprobacion se escribe abajo. El atributo se queda para que siga a
+        la vista de quien lea la clase cual es la llave principal.
     """
 
     permission_required = 'usuarios.administrar_campus'
     template_name = "panel.html"
+
+    def has_permission(self):
+        usuario = self.request.user
+        return usuario.es_admin or usuario.puede_auditar
 
     #: Cuantos dias compara la tendencia contra los mismos de antes.
     DIAS = 7

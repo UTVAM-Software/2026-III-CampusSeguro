@@ -19,6 +19,8 @@ NO SUSTITUYE A LAS PRUEBAS DE PERMISOS
 from apps.campus.models import Campus, PuntoApoyo
 from apps.comunicacion.models import Aviso, Notificacion
 from apps.reportes.models import Reporte, ReporteConfirmacion
+from django.urls import reverse
+
 from apps.viajes.models import UbicacionViaje, Viaje, ViajeAcompanante
 from config.navegacion import construir
 
@@ -424,6 +426,41 @@ class NadieSeQuedaFueraDeSuPropioInicioTests(BaseConCuentas):
                 respuesta = self.entrar(self.cuenta_de(rol)).get('/')
 
                 self.assertEqual(respuesta.status_code, 200)
+
+    def test_quien_audita_ve_las_listas_enteras(self):
+        """
+        "Acceso a todos los elementos de todo el sistema, en modo lectura".
+
+        Tener los permisos `view_` no bastaba: cada vista recorta además con
+        `get_queryset()`, por campus o por dueño, así que la cuenta de solo
+        lectura veía lo mismo que un estudiante. Lo que lo cambia es el
+        permiso `auditar_sistema`.
+        """
+        otro = Reporte.objects.create(
+            usuario=self.beto, campus=self.otro_campus, tipo='obras',
+            descripcion='De otro campus', latitud=19.4, longitud=-99.1,
+        )
+        Viaje.objects.create(usuario=self.beto, origen='A', destino='B')
+
+        auditor = self.cuenta_de('solo_lectura')
+
+        reportes = self.entrar(auditor).get('/reportes/').context['object_list']
+        viajes = self.entrar(auditor).get('/viajes/').context['object_list']
+
+        self.assertIn(otro, reportes)
+        self.assertEqual(len(viajes), Viaje.objects.count())
+
+    def test_quien_audita_no_escribe_nada(self):
+        """
+        Lo de "modo lectura" es la otra mitad, y es la que importa: ve el
+        sistema entero y no puede tocar una sola fila.
+        """
+        cliente = self.entrar(self.cuenta_de('solo_lectura'))
+
+        for nombre in ('reporte-create', 'punto-create', 'aviso-create',
+                       'usuario-create', 'grupo-create'):
+            with self.subTest(pantalla=nombre):
+                self.assertEqual(cliente.get(reverse(nombre)).status_code, 403)
 
     def test_la_barra_no_ofrece_puertas_que_se_cierran_en_la_cara(self):
         """
