@@ -462,6 +462,28 @@ class NadieSeQuedaFueraDeSuPropioInicioTests(BaseConCuentas):
             with self.subTest(pantalla=nombre):
                 self.assertEqual(cliente.get(reverse(nombre)).status_code, 403)
 
+    def test_a_quien_audita_no_se_le_pintan_botones_de_crear(self):
+        """
+        Un boton que responde 403 es la misma puerta pintada que la barra, y
+        salia en todas las listas: hasta ahora cualquier cuenta con sesion
+        podia crear, asi que nadie lo notaba.
+
+        Se mira el HTML y no los permisos: lo que importa es lo que ve quien
+        esta delante de la pantalla.
+        """
+        cliente = self.entrar(self.cuenta_de('solo_lectura'))
+
+        for nombre in ('reporte-list', 'viaje-list', 'usuario-list',
+                       'notificacion-list', 'destino-list', 'ubicacion-list',
+                       'acompanante-list', 'confirmacion-list'):
+            with self.subTest(pantalla=nombre):
+                respuesta = cliente.get(reverse(nombre))
+
+                self.assertNotContains(
+                    respuesta, '/create/',
+                    msg_prefix=f'{nombre} le ofrece crear a quien solo lee',
+                )
+
     def test_la_barra_no_ofrece_puertas_que_se_cierran_en_la_cara(self):
         """
         Cada área declara el permiso de la vista a la que lleva. Si alguien

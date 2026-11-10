@@ -16,7 +16,9 @@ NO LOS VE NADIE MÁS
 
 {% block content %}
 <h1>Tus destinos</h1>
+{% if perms.viajes.add_destinoguardado %}
 <a class="boton" href="{% url 'destino-create' %}">Guardar un destino</a>
+{% endif %}
 
 {% if object_list %}
 <ul class="fichas">

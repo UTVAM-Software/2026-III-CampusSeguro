@@ -1,7 +1,9 @@
 {% extends 'base.html' %}
 {% block content %}
 <h1>Confirmaciones de reporte</h1>
+{% if perms.reportes.add_reporteconfirmacion %}
 <a class="boton" href="{% url 'confirmacion-create' %}">Nueva confirmación</a>
+{% endif %}
 <h2>Reportes</h2>
 <div style="overflow-x: auto;">
   <table class="tabla">

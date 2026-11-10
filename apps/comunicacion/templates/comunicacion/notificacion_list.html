@@ -11,7 +11,9 @@ ve de un vistazo cuántas quedan sin abrir sin tener que leer cada fila.
 {% block content %}
 <h1>Notificaciones</h1>
 <div class="acciones">
+  {% if perms.comunicacion.add_notificacion %}
   <a class="boton" href="{% url 'notificacion-create' %}">Nueva notificación</a>
+  {% endif %}
   {# La campana lleva aquí, así que esta es la puerta a los avisos del campus. #}
   <a class="boton secundario" href="{% url 'aviso-list' %}">Avisos del campus</a>
 </div>
