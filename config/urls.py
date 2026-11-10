@@ -38,6 +38,13 @@ urlpatterns = [
     # Un solo mecanismo y en un solo sitio: con unas vistas usando el
     # decorador y otras el mixin, mirar el urls.py ya no basta para saber que
     # esta cerrado. Y hay una prueba que lo mira ahi.
+    # El aviso de privacidad NO lleva `login_required`, a proposito: la ley
+    # lo pide antes de recoger los datos, y un aviso que solo se lee estando
+    # dentro llega tarde para decidir si entras.
+    path('privacidad/',
+         TemplateView.as_view(template_name='privacidad.html'),
+         name='privacidad'),
+
     path('', login_required(InicioView.as_view()), name='index'),
     path('mapa/', login_required(MapaView.as_view()), name='mapa'),
     path('panel/', login_required(PanelView.as_view()), name='panel'),
