@@ -64,7 +64,13 @@ hueco. Para llenarla:
 ```
 
 El primero carga las doce universidades de Pachuca y Tizayuca con sus
-coordenadas. El segundo crea las cuentas de prueba y un poco de contenido.
+coordenadas, y les pone el dominio de correo a las siete que se pudo
+comprobar. El segundo crea las cinco cuentas de prueba y contenido para que
+las pantallas no salgan vacías: tres puntos de apoyo, un reporte y un aviso
+vigente.
+
+Los dos se pueden correr las veces que haga falta: no duplican nada ni pisan
+lo que ya exista.
 
 ### Cuentas de prueba
 
@@ -149,10 +155,10 @@ gente esperando un mensaje que no se envía.
 .venv/Scripts/python.exe manage.py test
 ```
 
-Son **257** y tardan unos tres minutos. No tocan `db.sqlite3`: Django crea
+Son **291** y tardan unos dos minutos. No tocan `db.sqlite3`: Django crea
 una base aparte y la borra al terminar.
 
-Tres merecen que se sepa que existen, porque vigilan cosas que no se ven
+Algunas merecen que se sepa que existen, porque vigilan cosas que no se ven
 cuando se rompen:
 
 - **`apps/usuarios/tests_permisos.py`** declara, ruta por ruta, quién puede
@@ -167,6 +173,15 @@ cuando se rompen:
 - **`EtiquetasEnVariasLineasTests`** busca etiquetas de plantilla partidas en
   dos líneas. Django no las parsea: las imprime tal cual en la pantalla. Pasó
   de verdad, y el texto salía en la esquina de *todas* las pantallas.
+- **`NadieSeQuedaFueraDeSuPropioInicioTests`** recorre los cinco roles y
+  comprueba tres cosas: que ninguno recibe un 403 en la pantalla de inicio
+  —a la que llegan todos al entrar—, que la barra no ofrece ninguna entrada
+  que responda 403, y que la cuenta de solo lectura ve las listas enteras
+  pero no puede escribir ni editar la cuenta de otra persona.
+
+Las tres primeras encontraron fallos de verdad: una ruta sin declarar, un
+panel que no pedía sesión y una cuenta de solo lectura que podía cambiarle
+el nombre y el correo a cualquiera.
 
 ---
 
@@ -176,8 +191,8 @@ No son parte de la aplicación: son scripts para trabajar con ella.
 
 | | |
 |---|---|
-| `cargar_campus.py` | Las doce universidades con sus coordenadas. Se puede correr las veces que haga falta. |
-| `sembrar_datos.py` | Cuentas de prueba y contenido para ver las pantallas llenas. |
+| `cargar_campus.py` | Las doce universidades con sus coordenadas y sus dominios de correo, cada uno con la fuente donde se comprobó. No pisa lo que se haya puesto desde el Panel. |
+| `sembrar_datos.py` | Las cinco cuentas de prueba y contenido para ver las pantallas llenas. |
 | `generar_esquema_mysql.py` | `docs/esquema_mysql.sql` para dibujar el diagrama. |
 | `auditar_permisos.py` | Recorre todas las rutas con una cuenta de cada rol y enseña qué responde cada una. Con esto se encontró que el panel no pedía sesión. |
 
@@ -240,11 +255,35 @@ abrir; quien cierra con llave son las vistas.
 
 Para que no haya que leerse el código para saberlo:
 
-- **Los doce campus no tienen dominio de correo configurado**, así que la
-  restricción al correo institucional está montada pero apagada. El panel lo
-  avisa.
-- **No hay ningún punto de apoyo cargado.** El formulario deja señalarlos en
-  el mapa; hay que registrarlos.
+- **Cinco campus siguen sin dominio de correo**: TecNM Pachuca, Tec de
+  Monterrey, La Salle, UPN y UPMH. No están puestos a propósito —no se
+  encontró una fuente de esas universidades que confirmara el formato de su
+  correo—, y un dominio equivocado cierra la puerta a toda una universidad.
+  Se ponen desde Panel → Campus.
+- **No hay puntos de apoyo reales.** Los tres que carga `sembrar_datos.py`
+  se llaman «de demostración» en el nombre: decir «aquí hay una enfermería»
+  es decirle a alguien que a las diez de la noche puede caminar hasta ahí y
+  encontrar a una persona, y eso lo registra quien administra el campus,
+  desde el mapa, porque es quien lo sabe.
+- **Las coordenadas de UTVAM están sin confirmar.** Sobre la imagen de
+  satélite, el punto que usa el sistema cae en terreno baldío junto al
+  entronque. UTVAM no está mapeada en OpenStreetMap, así que hace falta que
+  alguien del equipo señale cuál es la entrada.
 - **Faltan once iconos** del juego de la marca: tache, palomita, advertencia,
   información, tendencia, cámara, salir y el logotipo reducido. Donde no hay,
   se usa un carácter o un SVG dibujado a mano.
+- **No hay aviso de privacidad.** La aplicación guarda correo, teléfono,
+  campus, los reportes con su foto y las posiciones de un viaje en curso;
+  falta el documento que lo diga y explique cómo ejercer los derechos ARCO.
+
+---
+
+## Licencia
+
+**MIT** — ver [`LICENSE`](LICENSE). Se puede usar, copiar y modificar citando
+la autoría, que es lo que tiene sentido para un trabajo escolar del que otro
+equipo pueda aprender algo.
+
+El código de terceros mantiene la suya: Django y Leaflet son BSD, los datos
+de OpenStreetMap son ODbL —por eso el mapa lleva su atribución a la vista, y
+borrarla sería incumplirla— y las teselas las sirve Esri.
