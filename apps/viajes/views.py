@@ -100,6 +100,17 @@ class ViajeListView(PermisoRequeridoMixin, SoloMisViajesMixin, ListView):
             .exclude(estado="en_curso")
             .order_by("-fecha_inicio")
         )
+
+        # Las cuatro secciones de arriba son "lo tuyo", y para una cuenta de
+        # auditoria estaban todas vacias: no viaja ni acompania a nadie. Esta
+        # quinta es la suya, y se llama por su nombre -los viajes de toda la
+        # comunidad- en vez de colarlos en una seccion que dice "tus viajes".
+        if usuario.puede_auditar:
+            ctx["todos_los_viajes"] = (
+                Viaje.objects.select_related("usuario")
+                .order_by("-fecha_inicio")
+            )
+
         return ctx
 
 

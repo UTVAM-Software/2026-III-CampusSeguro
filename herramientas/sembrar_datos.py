@@ -29,7 +29,7 @@ NO BORRA NADA
 
 import os
 import sys
-from datetime import date
+from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
 
@@ -41,7 +41,7 @@ import django
 
 django.setup()
 
-from apps.campus.models import Campus
+from apps.campus.models import Campus, PuntoApoyo
 from apps.comunicacion.models import Aviso, Notificacion
 from apps.reportes.models import Reporte
 from apps.usuarios.models import Usuario
@@ -148,14 +148,50 @@ def main():
             longitud=Decimal("-98.979500"),
         )
 
+    # La fecha va contada desde hoy y no escrita a mano. Estaba fija en
+    # octubre de 2026: al mes siguiente el aviso ya habia caducado, la
+    # pantalla de inicio dejaba de ensenarlo -un aviso vencido es informacion
+    # falsa- y parecia que el sembrado no hacia nada.
     Aviso.objects.get_or_create(
-        campus=campus, titulo="prueba 1",
+        campus=campus, titulo="Obras en el acceso norte",
         defaults={
-            "contenido": "contenido",
+            "contenido": (
+                "El acceso norte esta cerrado por obras. Usa la entrada "
+                "principal del boulevard."
+            ),
             "autor": lady,
-            "fecha_expiracion": date(2026, 10, 14),
+            "fecha_expiracion": date.today() + timedelta(days=30),
         },
     )
+
+    # Puntos de apoyo de DEMOSTRACION.
+    #
+    # NO SON LOS DE NINGUN CAMPUS DE VERDAD
+    #     Decir "aqui hay una enfermeria" es decirle a alguien que a las diez
+    #     de la noche puede caminar hasta ahi y encontrar a una persona. Los
+    #     de un campus real los registra quien lo administra, desde la app y
+    #     con el mapa, porque es quien sabe donde estan.
+    #
+    #     Estos existen para que las pantallas no se vean vacias al probar, y
+    #     se van con `db.sqlite3`, que no se sube al repositorio.
+    for nombre, tipo, horario, lat, lng in [
+        ("Caseta de demostracion", "caseta",
+         "Lunes a viernes 7:00 a 21:00", "19.864100", "-98.981800"),
+        ("Enfermeria de demostracion", "enfermeria",
+         "Lunes a viernes 8:00 a 16:00", "19.863400", "-98.982400"),
+        ("Modulo de demostracion", "modulo",
+         "", "19.863900", "-98.981200"),
+    ]:
+        PuntoApoyo.objects.get_or_create(
+            campus=campus, nombre=nombre,
+            defaults={
+                "tipo": tipo,
+                "horario": horario,
+                "descripcion": "Punto de ejemplo, para ver las pantallas con contenido.",
+                "latitud": Decimal(lat),
+                "longitud": Decimal(lng),
+            },
+        )
 
     Notificacion.objects.get_or_create(
         usuario=alexis, titulo="prueba 1", defaults={"mensaje": "contenido"},

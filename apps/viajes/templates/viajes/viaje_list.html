@@ -76,8 +76,16 @@ la des no ve nada de su viaje.
     </ul>
   {% else %}
     <div class="tarjeta">
-      {% url 'viaje-create' as ir_a_planificar %}
-      {% include '_estado_vacio.html' with icono='viajes' titulo='No tienes viajes en curso' texto='Planifica un trayecto y comparte tu ubicación con quien tú elijas mientras dure.' accion_url=ir_a_planificar accion_texto='Planificar viaje' only %}
+      {% comment %}
+      El hueco lleva botón solo para quien puede planificar. Una cuenta de
+      solo lectura veía "Planificar viaje" y recibía un 403 al pulsarlo.
+      {% endcomment %}
+      {% if perms.viajes.add_viaje %}
+        {% url 'viaje-create' as ir_a_planificar %}
+        {% include '_estado_vacio.html' with icono='viajes' titulo='No tienes viajes en curso' texto='Planifica un trayecto y comparte tu ubicación con quien tú elijas mientras dure.' accion_url=ir_a_planificar accion_texto='Planificar viaje' only %}
+      {% else %}
+        {% include '_estado_vacio.html' with icono='viajes' titulo='No hay viajes en curso' texto='Aquí aparecen los trayectos que están ocurriendo ahora mismo.' only %}
+      {% endif %}
     </div>
   {% endif %}
 </section>
@@ -142,4 +150,38 @@ la des no ve nada de su viaje.
     </div>
   {% endif %}
 </section>
+
+{# ------------------------ Todos, para quien audita ---------------------- #}
+{% comment %}
+Las secciones de arriba son "lo tuyo", y para una cuenta de auditoría están
+todas vacías: no viaja ni acompaña a nadie. Esta sección existe solo para
+ella, y dice de quién es cada viaje, que es justo lo que se está mirando.
+{% endcomment %}
+{% if todos_los_viajes %}
+  <section class="seccion" aria-labelledby="titulo-auditoria">
+    <h2 id="titulo-auditoria">Todos los viajes del sistema</h2>
+
+    <ul class="fichas">
+      {% for v in todos_los_viajes %}
+        <li>
+          <a class="ficha" href="{{ v.get_absolute_url }}">
+            <span class="ficha__cabecera">
+              <span class="ficha__titulo">Hacia {{ v.destino }}</span>
+              {% include '_insignia.html' with texto=v.get_estado_display tono=v.tono_estado %}
+            </span>
+            <p class="ficha__meta">
+              De {{ v.usuario }} · desde {{ v.origen }} ·
+              {% if v.fecha_fin %}terminó {{ v.fecha_fin|hace }}{% else %}empezó {{ v.fecha_inicio|hace }}{% endif %}
+            </p>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+
+    <p class="campo__ayuda">
+      Se conserva a dónde fue cada quien y cuándo, nunca el recorrido: las
+      posiciones se borran al terminar el viaje.
+    </p>
+  </section>
+{% endif %}
 {% endblock %}

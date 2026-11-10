@@ -41,7 +41,10 @@ ARRIBA DE LA LATERAL VA LA CUENTA, NO LA MARCA
         </span>
       </a>
 
-      {% include '_campana.html' with clases='campana--oscura' %}
+      {# La campana lleva a notificaciones: sin ese permiso, no se ofrece. #}
+      {% if perms.comunicacion.view_notificacion %}
+        {% include '_campana.html' with clases='campana--oscura' %}
+      {% endif %}
     </div>
 
     <hr class="lateral__raya">
@@ -77,7 +80,9 @@ ARRIBA DE LA LATERAL VA LA CUENTA, NO LA MARCA
         <span>{{ user.nombre }}</span>
       </a>
       <div class="cabecera-movil__acciones">
-        {% include '_campana.html' %}
+        {% if perms.comunicacion.view_notificacion %}
+          {% include '_campana.html' %}
+        {% endif %}
         <form method="post" action="{% url 'salir' %}">
           {% csrf_token %}
           <button type="submit" class="boton secundario">Salir</button>

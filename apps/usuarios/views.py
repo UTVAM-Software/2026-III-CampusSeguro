@@ -87,10 +87,37 @@ class SoloYoOSuperadminMixin:
     Quien administra un campus TAMPOCO: para su trabajo -avisos, reportes,
     puntos de apoyo- no hace falta la ficha de nadie, y dársela sería
     repartir los datos de contacto de su universidad entera.
+
+    QUIEN AUDITA LAS LEE TODAS, Y ESO ES SOLO PARA LEER
+        Este recorte lo comparten la ficha y el formulario de editar. Al
+        ensancharlo para que la auditoría pudiera VER cualquier cuenta, se
+        le abrió también EDITARLAS: tiene `change_usuario` para su propio
+        perfil, y con el recorte ancho esa llave valía para la cuenta de
+        cualquiera. Se podía cambiar el nombre y el correo de otra persona
+        desde un rol que se llama "solo lectura".
+
+        Por eso el formulario de editar tiene el suyo propio, abajo, y este
+        se queda para las pantallas que únicamente muestran.
     """
 
     def get_queryset(self):
         if self.request.user.es_superadmin or self.request.user.puede_auditar:
+            return Usuario.objects.all()
+
+        return Usuario.objects.filter(pk=self.request.user.pk)
+
+
+class SoloMiCuentaOSuperadminMixin:
+    """
+    El recorte de las pantallas que ESCRIBEN sobre una cuenta.
+
+    Igual que el de arriba pero sin la auditoría: leer todas las fichas y
+    poder cambiarlas no son la misma cosa, y mezclarlas en un solo recorte
+    fue justo lo que abrió el agujero.
+    """
+
+    def get_queryset(self):
+        if self.request.user.es_superadmin:
             return Usuario.objects.all()
 
         return Usuario.objects.filter(pk=self.request.user.pk)
@@ -127,7 +154,9 @@ class UsuarioCreateView(PermisoRequeridoMixin, CreateView):
     success_url = reverse_lazy('usuario-list')
 
 
-class UsuarioUpdateView(PermisoRequeridoMixin, SoloYoOSuperadminMixin, UpdateView):
+class UsuarioUpdateView(
+    PermisoRequeridoMixin, SoloMiCuentaOSuperadminMixin, UpdateView
+):
     permission_required = 'usuarios.change_usuario'
     model = Usuario
 
