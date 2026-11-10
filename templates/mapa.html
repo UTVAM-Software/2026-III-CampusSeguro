@@ -41,6 +41,38 @@ LAS FORMAS SE DISTINGUEN SIN COLOR
 </div>
 
 {% comment %}
+Qué significa cada punto: sin esto, el color de un marcador es un código que
+solo conoce quien haya leído el guion.
+
+Nace escondida y la destapa el guion, igual que el mapa del formulario de
+puntos de apoyo: si Leaflet no carga no hay mapa, y explicar los colores de
+un recuadro vacío es ruido.
+{% endcomment %}
+<div class="leyenda" data-leyenda hidden>
+  <span class="leyenda__grupo">
+    <span class="leyenda__titulo">Condiciones</span>
+    <span class="leyenda__dato">
+      <span class="leyenda__marca leyenda__marca--condicion leyenda__marca--pendiente" aria-hidden="true"></span>Pendiente
+    </span>
+    <span class="leyenda__dato">
+      <span class="leyenda__marca leyenda__marca--condicion leyenda__marca--verificado" aria-hidden="true"></span>Verificado
+    </span>
+    <span class="leyenda__dato">
+      <span class="leyenda__marca leyenda__marca--condicion leyenda__marca--resuelto" aria-hidden="true"></span>Resuelto
+    </span>
+    <span class="leyenda__dato">
+      <span class="leyenda__marca leyenda__marca--condicion leyenda__marca--rechazado" aria-hidden="true"></span>Rechazado
+    </span>
+  </span>
+  <span class="leyenda__grupo">
+    <span class="leyenda__titulo">Apoyo</span>
+    <span class="leyenda__dato">
+      <span class="leyenda__marca leyenda__marca--apoyo" aria-hidden="true"></span>Punto de apoyo
+    </span>
+  </span>
+</div>
+
+{% comment %}
 La comparación de caminos no entra en la barra de navegación: son cinco
 áreas y no seis. Se llega desde aquí, que es donde alguien ya está mirando el
 campus y lo que se ha registrado en él.

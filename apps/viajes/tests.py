@@ -10,7 +10,8 @@ from django.utils import timezone
 
 from apps.usuarios.tests_base import BaseConCuentas
 
-from .models import UbicacionViaje, Viaje, ViajeAcompanante
+from .forms import ViajeForm
+from .models import DestinoGuardado, UbicacionViaje, Viaje, ViajeAcompanante
 
 
 class BaseConViaje(BaseConCuentas):
@@ -145,15 +146,165 @@ class DeQuienEsElViajeTests(BaseConViaje):
 
 class FechasTests(BaseConCuentas):
     def test_no_se_elige_una_fecha_que_ya_paso(self):
-        """Regla de Lady, y sigue valiendo: un viaje no termina ayer."""
+        """
+        Regla de Lady, y sigue valiendo: una hora límite que ya pasó nace
+        vencida y el acompañamiento no serviría para nada.
+
+        La comprobación estaba puesta sobre `fecha_fin` —cuándo terminó el
+        viaje—, que ya no se elige: la pone el sistema al cerrarlo. Ahora
+        vigila la hora límite, que es el dato que sí se pide.
+        """
         ayer = timezone.now() - timezone.timedelta(days=1)
 
         self.entrar(self.ana).post('/viajes/create/', {
-            'origen': 'A', 'destino': 'B', 'estado': 'en_curso',
-            'fecha_fin': ayer.strftime('%Y-%m-%dT%H:%M'),
+            'origen': 'A', 'destino': 'B',
+            'fecha_expiracion': ayer.strftime('%Y-%m-%dT%H:%M'),
         })
 
         self.assertFalse(Viaje.objects.exists())
+
+
+class ElegirEnElMapaTests(BaseConCuentas):
+    """
+    Planificar un viaje señalando en el mapa, no escribiendo coordenadas.
+    """
+
+    def test_el_viaje_guarda_las_coordenadas_que_puso_el_mapa(self):
+        manana = timezone.now() + timezone.timedelta(hours=2)
+
+        self.entrar(self.ana).post('/viajes/create/', {
+            'origen': 'Biblioteca', 'destino': 'Paradero',
+            'latitud_origen': '19.864522', 'longitud_origen': '-98.981229',
+            'latitud_destino': '19.865600', 'longitud_destino': '-98.969700',
+            'fecha_expiracion': manana.strftime('%Y-%m-%dT%H:%M'),
+        })
+
+        viaje = Viaje.objects.get()
+
+        self.assertEqual(str(viaje.latitud_origen), '19.864522')
+        self.assertEqual(str(viaje.longitud_destino), '-98.969700')
+        self.assertEqual(viaje.usuario, self.ana)
+
+    def test_las_coordenadas_no_se_piden_escritas(self):
+        """
+        Van escondidas: las rellena el mapa. Si alguien las devuelve a cajas
+        de texto, esta prueba lo dice en vez de dejar que vuelva la pantalla
+        donde había que saberse la latitud.
+        """
+        formulario = ViajeForm()
+
+        for nombre in ('latitud_origen', 'longitud_origen',
+                       'latitud_destino', 'longitud_destino'):
+            self.assertTrue(
+                formulario.fields[nombre].widget.is_hidden,
+                f'{nombre} volvió a pedirse escrito a mano',
+            )
+
+    def test_sin_mapa_el_viaje_se_guarda_igual(self):
+        """
+        Las coordenadas son opcionales. Sin JavaScript el viaje se crea sin
+        ellas —no con unas inventadas—, y la pantalla sigue sirviendo.
+        """
+        self.entrar(self.ana).post('/viajes/create/', {
+            'origen': 'Biblioteca', 'destino': 'Paradero',
+        })
+
+        viaje = Viaje.objects.get()
+
+        self.assertIsNone(viaje.latitud_origen)
+
+    def test_los_atajos_son_tus_destinos_y_solo_los_tuyos(self):
+        """
+        A dónde suele ir alguien es tan suyo como el viaje. Si los atajos
+        salieran de todo el mundo, esta pantalla diría dónde vive Beto.
+        """
+        DestinoGuardado.objects.create(
+            usuario=self.ana, etiqueta='Casa', latitud=20.1, longitud=-98.7,
+        )
+        DestinoGuardado.objects.create(
+            usuario=self.beto, etiqueta='Casa de Beto',
+            latitud=20.2, longitud=-98.8,
+        )
+
+        respuesta = self.entrar(self.ana).get('/viajes/create/')
+
+        etiquetas = [d.etiqueta for d in respuesta.context['destinos']]
+
+        self.assertEqual(etiquetas, ['Casa'])
+
+    def test_al_editar_tambien_estan_los_atajos(self):
+        DestinoGuardado.objects.create(
+            usuario=self.ana, etiqueta='Casa', latitud=20.1, longitud=-98.7,
+        )
+        viaje = Viaje.objects.create(
+            usuario=self.ana, origen='A', destino='B',
+        )
+
+        respuesta = self.entrar(self.ana).get(f'/viajes/{viaje.pk}/update/')
+
+        self.assertEqual(len(respuesta.context['destinos']), 1)
+
+
+class CerrarPorLaPuertaDeAtrasTests(BaseConViaje):
+    """
+    Que no haya una segunda forma de cerrar un viaje.
+
+    Pasó de verdad: el formulario enseñaba el campo `estado`, así que editar
+    el viaje y elegir "Llegó bien" lo daba por terminado sin borrar las
+    posiciones. El viaje salía cerrado en la lista y el recorrido seguía en
+    la base, que es justo lo que la aplicación promete no hacer.
+    """
+
+    def test_el_formulario_no_puede_tocar_el_estado(self):
+        self.entrar(self.ana).post(f'/viajes/{self.viaje.pk}/update/', {
+            'origen': 'Biblioteca', 'destino': 'Otro paradero',
+            'estado': 'llego_bien',
+        })
+
+        self.viaje.refresh_from_db()
+
+        # El destino sí cambia: así se sabe que el formulario se guardó, y no
+        # que la prueba pasa porque no se guardó nada.
+        self.assertEqual(self.viaje.destino, 'Otro paradero')
+        self.assertEqual(self.viaje.estado, 'en_curso')
+
+    def test_el_formulario_no_puede_dejar_el_rastro_guardado(self):
+        """
+        Lo que de verdad importa: si alguna vez vuelve a poderse cerrar desde
+        aquí, que al menos no sea en silencio y con las posiciones dentro.
+        """
+        self.entrar(self.ana).post(f'/viajes/{self.viaje.pk}/update/', {
+            'origen': 'Biblioteca', 'destino': 'Paradero',
+            'estado': 'llego_bien',
+        })
+
+        self.viaje.refresh_from_db()
+
+        if not self.viaje.esta_en_curso:
+            self.assertEqual(self.viaje.ubicaciones.count(), 0)
+
+    def test_estado_y_fecha_fin_no_estan_en_el_formulario(self):
+        """
+        Se mira la lista de campos y no solo el resultado de un POST: así, el
+        día que alguien vuelva a `exclude`, esta prueba lo dice por su nombre
+        en vez de dejar que se note cuando ya no se note.
+        """
+        campos = ViajeForm().fields
+
+        self.assertNotIn('estado', campos)
+        self.assertNotIn('fecha_fin', campos)
+
+    def test_cerrar_dos_veces_no_mueve_nada(self):
+        """Recargar la pantalla después de pulsar no reescribe la llegada."""
+        self.assertTrue(self.viaje.cerrar('llego_bien'))
+
+        primera = self.viaje.fecha_fin
+
+        self.assertFalse(self.viaje.cerrar('cancelado'))
+        self.viaje.refresh_from_db()
+
+        self.assertEqual(self.viaje.estado, 'llego_bien')
+        self.assertEqual(self.viaje.fecha_fin, primera)
 
 
 class CerrarElViajeTests(BaseConViaje):

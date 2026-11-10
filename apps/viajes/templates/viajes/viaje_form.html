@@ -1,10 +1,182 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% comment %}
+Planificar un viaje.
+
+EL ORIGEN Y EL DESTINO SE SEÑALAN EN EL MAPA
+    Nadie se sabe su latitud. Se usa el mismo bloque que reportar y los
+    puntos de apoyo (`ubicacion.js`): el mapa, la ubicación actual o la
+    dirección buscada rellenan las coordenadas, que viajan escondidas.
+
+UN MAPA POR PUNTO, Y NO UNO COMPARTIDO
+    Con un solo mapa habría que recordar si el siguiente toque es el origen o
+    el destino, y equivocarse manda el viaje al revés sin que se note. Dos
+    mapas pequeños, cada uno bajo su título, no tienen esa duda.
+{% endcomment %}
+
+{% block extra_head %}
+  {% comment %}
+  Leaflet, con la versión fija y su huella: el navegador rechaza el archivo
+  si llega cambiado.
+  {% endcomment %}
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css"
+        integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+{% endblock %}
+
+{% block volver %}<a class="atras" href="{% url 'viaje-list' %}">← Volver a viajes</a>{% endblock %}
+
 {% block content %}
-<h1>Viaje</h1>
-<form method="post">
+<header class="cabecera">
+  <div class="cabecera__linea">
+    <h1>{% if object %}Editar viaje{% else %}Planificar viaje{% endif %}</h1>
+  </div>
+  <p class="cabecera__meta">
+    Señala de dónde sales y a dónde vas. Después eliges hasta qué hora quieres
+    que te acompañen.
+  </p>
+</header>
+
+<form class="formulario" method="post" novalidate>
   {% csrf_token %}
-  {{ form.as_p }}
-  <button type="submit">Guardar</button>
+
+  {% if form.non_field_errors %}
+    <div class="aviso atencion" role="alert">
+      <span class="aviso__icono" aria-hidden="true">✕</span>
+      <div>
+        <p class="aviso__titulo">Revisa el formulario</p>
+        {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  {# ----------------------------- De dónde sales ---------------------------- #}
+  {% include '_campo.html' with campo=form.origen %}
+
+  <div class="tarjeta" data-ubicacion data-par="origen">
+    <h2 class="tarjeta__titulo">Dónde empiezas</h2>
+
+    {# Escondidas: las pone el guion. Sin él, el viaje se guarda sin ellas. #}
+    {{ form.latitud_origen }}
+    {{ form.longitud_origen }}
+
+    <div class="aviso" role="status">
+      <span class="aviso__icono" aria-hidden="true">◎</span>
+      <div>
+        <p class="aviso__titulo" data-titulo>Sin punto de salida</p>
+        <p data-estado>Señálalo en el mapa, usa tu ubicación o busca la dirección.</p>
+      </div>
+    </div>
+
+    {% if destinos %}
+      {% comment %}
+      Los destinos guardados. Para esto se guardaron: lo caro de conseguir
+      aquí son las coordenadas, y un toque las pone.
+      {% endcomment %}
+      <div class="atajos">
+        {% for d in destinos %}
+          <button type="button" class="chip" data-destino-guardado
+                  data-lat="{{ d.latitud }}" data-lng="{{ d.longitud }}"
+                  data-etiqueta="{{ d.etiqueta }}">{{ d.etiqueta }}</button>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% comment %}
+    Nace escondido y lo destapa el guion: sin Leaflet no se queda un recuadro
+    gris sin explicación.
+    {% endcomment %}
+    <div class="lienzo lienzo--chico" hidden>
+      <div data-mapa-ubicacion
+           {% if user.campus %}data-centro="{{ user.campus.latitud }},{{ user.campus.longitud }}"{% endif %}></div>
+    </div>
+
+    <button type="button" class="boton secundario bloque" data-mi-ubicacion>
+      Usar mi ubicación actual
+    </button>
+    <button type="button" class="boton secundario bloque" data-otra-direccion>
+      Escribir una dirección
+    </button>
+
+    <div class="buscador" data-buscador hidden>
+      <input type="text" data-direccion placeholder="Ej. UTVAM, Tizayuca">
+      <button type="button" class="boton" data-buscar>Buscar</button>
+    </div>
+
+    {% for error in form.latitud_origen.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+    {% for error in form.longitud_origen.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+  </div>
+
+  {# ------------------------------ A dónde vas ----------------------------- #}
+  {% include '_campo.html' with campo=form.destino %}
+
+  <div class="tarjeta" data-ubicacion data-par="destino">
+    <h2 class="tarjeta__titulo">Dónde terminas</h2>
+
+    {{ form.latitud_destino }}
+    {{ form.longitud_destino }}
+
+    <div class="aviso" role="status">
+      <span class="aviso__icono" aria-hidden="true">◎</span>
+      <div>
+        <p class="aviso__titulo" data-titulo>Sin destino</p>
+        <p data-estado>Señálalo en el mapa, usa tu ubicación o busca la dirección.</p>
+      </div>
+    </div>
+
+    {% if destinos %}
+      <div class="atajos">
+        {% for d in destinos %}
+          <button type="button" class="chip" data-destino-guardado
+                  data-lat="{{ d.latitud }}" data-lng="{{ d.longitud }}"
+                  data-etiqueta="{{ d.etiqueta }}">{{ d.etiqueta }}</button>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <div class="lienzo lienzo--chico" hidden>
+      <div data-mapa-ubicacion
+           {% if user.campus %}data-centro="{{ user.campus.latitud }},{{ user.campus.longitud }}"{% endif %}></div>
+    </div>
+
+    <button type="button" class="boton secundario bloque" data-mi-ubicacion>
+      Usar mi ubicación actual
+    </button>
+    <button type="button" class="boton secundario bloque" data-otra-direccion>
+      Escribir una dirección
+    </button>
+
+    <div class="buscador" data-buscador hidden>
+      <input type="text" data-direccion placeholder="Ej. Paradero de Los Héroes">
+      <button type="button" class="boton" data-buscar>Buscar</button>
+    </div>
+
+    {% for error in form.latitud_destino.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+    {% for error in form.longitud_destino.errors %}<p class="campo__error">{{ error }}</p>{% endfor %}
+  </div>
+
+  {# ------------------------------ Hora límite ----------------------------- #}
+  {% include '_campo.html' with campo=form.fecha_expiracion %}
+
+  <button type="submit" class="bloque">
+    {% if object %}Guardar cambios{% else %}Empezar viaje{% endif %}
+  </button>
 </form>
-<a class="boton secundario" href="{% url 'viaje-list' %}">Cancelar</a>
+
+<a class="boton secundario bloque" href="{% url 'viaje-list' %}">Cancelar</a>
+{% endblock %}
+
+{% block descargo %}
+  Mientras el viaje esté en curso compartes tu ubicación solo con quien
+  aceptaste. Al cerrarlo, esas posiciones se borran.
+{% endblock %}
+
+{% block extra_scripts %}
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"
+          integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g=="
+          crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  {# mapa.js trae la capa de fondo, comun a todos los mapas del proyecto. #}
+  <script src="{% static 'js/mapa.js' %}?v={{ VERSION_CSS }}" defer></script>
+  <script src="{% static 'js/ubicacion.js' %}?v={{ VERSION_CSS }}" defer></script>
 {% endblock %}
