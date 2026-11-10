@@ -92,22 +92,36 @@ def main():
             rol="superadmin",
         )
 
-    # Una cuenta por cada rol, para poder entrar con los tres y ver que
-    # ensena cada uno. Son los tres del proyecto anterior:
+    # Una cuenta por cada rol, para poder entrar con los cinco y ver que
+    # ensena cada uno:
     #
-    #   estudiante  lo normal
-    #   admin       administra SU campus: panel, avisos, puntos de apoyo,
-    #               revisar reportes
-    #   superadmin  ademas, el sistema: los campus y las cuentas
-    #
-    # Antes habia cinco -se sumaban docente, administrativo y seguridad- y
-    # tres de ellos no daban ni quitaban nada.
+    #   estudiante    lo normal
+    #   admin         administra SU campus: panel, avisos, puntos de apoyo,
+    #                 revisar reportes
+    #   superadmin    ademas, el sistema: los campus y las cuentas
+    #   externo       quien no es de la comunidad: consulta campus, puntos de
+    #                 apoyo y avisos, y edita su ficha. Nada mas
+    #   solo_lectura  ve el sistema ENTERO, de todos los campus, y no puede
+    #                 agregar, modificar ni eliminar nada
     if not Usuario.objects.filter(correo="admin@gmail.com").exists():
         Usuario.objects.create_user(
             correo="admin@gmail.com", nombre="ADMINISTRACION",
             password=CLAVE_DE_PRUEBA, apellidos="DEL CAMPUS",
             campus=campus, rol="admin",
         )
+
+    # Los dos perfiles que se revisan: el del visitante y el de auditoria.
+    # Mismo campus y misma clave que las demas, para que entrar con cada una
+    # sea solo cambiar el correo.
+    for correo, nombre, apellidos, rol in [
+        ("externo@gmail.com", "VISITANTE", "EXTERNO", "externo"),
+        ("lectura@gmail.com", "AUDITORIA", "SOLO LECTURA", "solo_lectura"),
+    ]:
+        if not Usuario.objects.filter(correo=correo).exists():
+            Usuario.objects.create_user(
+                correo=correo, nombre=nombre, password=CLAVE_DE_PRUEBA,
+                apellidos=apellidos, campus=campus, rol=rol,
+            )
 
     reporte, _ = Reporte.objects.get_or_create(
         usuario=lady, campus=campus, tipo="situacion",
