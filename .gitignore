@@ -18,7 +18,6 @@ default_*.sqlite3
 
 # Editor y herramientas
 .vscode/
-.claude/
 .idea/
 
 # Archivos de usuario

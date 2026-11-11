@@ -73,11 +73,8 @@ class Viaje(models.Model):
         """
         Pasa el viaje a «Alerta» y avisa a quien lo acompaña.
 
-        ES LO QUE CONVIERTE "COMPARTO MI UBICACIÓN" EN ALGO QUE SIRVE
-            Hasta ahora el estado `alerta` existía en el modelo y la pantalla
-            del viaje ya sabía dibujarlo, pero nadie lo ponía nunca: la hora
-            límite pasaba y no ocurría nada. Quien aceptaba acompañar se
-            quedaba esperando una alarma que no iba a sonar.
+        Es lo que convierte «comparto mi ubicación» en que alguien se entere
+        si no llego.
 
         NO CIERRA EL VIAJE, Y ESO ES DELIBERADO
             Cerrar borra las posiciones, y las posiciones son justo lo que

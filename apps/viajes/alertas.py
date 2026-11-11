@@ -2,26 +2,13 @@
 Los viajes a los que se les pasó la hora límite.
 
 CÓMO SE DISPARA, Y POR QUÉ ASÍ
-    No hay un proceso en segundo plano. La revisión se hace al abrir la
-    aplicación: la pantalla de inicio y la lista de viajes la llaman antes de
-    dibujarse.
+    No hay proceso en segundo plano: la revisión la hacen la pantalla de
+    inicio y la lista de viajes al dibujarse. Eso significa que si nadie abre
+    Campus Seguro, nadie recibe el aviso. Para que llegara solo haría falta
+    un programador de tareas en un servidor, y esto se instala en una laptop.
 
-    Lo honesto es decir qué significa eso: si nadie abre Campus Seguro, nadie
-    recibe el aviso. Para que llegara sin que nadie mire haría falta un
-    programador de tareas -cron, Celery- corriendo en un servidor, y este
-    proyecto se instala en una laptop.
-
-    Por eso lo de aquí también se puede llamar desde fuera:
-
-        .venv/Scripts/python.exe manage.py revisar_viajes
-
-    Ese comando es el que se programaría el día que esto viva en un servidor.
-    La lógica no cambia: cambia quién la llama.
-
-ES BARATA
-    `se_paso_la_hora` se traduce a una consulta con tres condiciones sobre
-    campos indexables, y en el caso normal no devuelve nada. Lo que cuesta
-    -escribir notificaciones- solo ocurre cuando de verdad venció un viaje.
+    Por eso también hay un comando, `manage.py revisar_viajes`, que es el que
+    se programaría ese día. La lógica no cambia: cambia quién la llama.
 """
 
 from django.utils import timezone

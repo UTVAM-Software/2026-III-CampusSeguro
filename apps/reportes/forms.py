@@ -89,6 +89,25 @@ class ReporteForm(forms.ModelForm):
             [('', 'Elige una categoría')] + list(Reporte.TIPOS)
         )
 
+        # Las coordenadas se comprueban juntas, abajo, y no una por una.
+        # Siendo cada una obligatoria por su cuenta, enviar el formulario sin
+        # señalar el punto sacaba DOS mensajes idénticos que decían "Este
+        # campo es obligatorio" sobre campos que la persona nunca ve: no
+        # había forma de adivinar que lo que faltaba era marcar el mapa.
+        self.fields['latitud'].required = False
+        self.fields['longitud'].required = False
+
+    def clean(self):
+        datos = super().clean()
+
+        if not datos.get('latitud') or not datos.get('longitud'):
+            self.add_error('latitud', (
+                'Falta decir dónde ocurre. Señálalo en el mapa, usa tu '
+                'ubicación actual o busca la dirección.'
+            ))
+
+        return datos
+
     def clean_descripcion(self):
         descripcion = (self.cleaned_data.get('descripcion') or '').strip()
 

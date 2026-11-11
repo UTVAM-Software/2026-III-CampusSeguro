@@ -1,10 +1,9 @@
 """
 El aviso de que se pasó la hora límite.
 
-Es la pieza que convierte «comparto mi ubicación» en «alguien se entera si no
-llego». Hasta ahora el estado `alerta` existía en el modelo y la pantalla del
-viaje sabía dibujarlo, pero nadie lo ponía nunca: la hora pasaba y no ocurría
-nada.
+Es la pieza que convierte «comparto mi ubicación» en que alguien se entere si
+no llego, así que lo que vigilan estas pruebas es que suene cuando toca, que
+no suene cuando no, y que no se repita.
 """
 
 from django.core.management import call_command

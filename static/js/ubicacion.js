@@ -59,6 +59,10 @@
       enlace.rel = 'noopener';
       enlace.textContent = 'Ver en el mapa';
       estado.appendChild(enlace);
+
+      // Sin esto la pantalla dice "Ubicacion lista" en azul y, dos dedos mas
+      // abajo, el error del envio anterior en rojo.
+      caja.querySelectorAll('.campo__error').forEach((viejo) => viejo.remove());
     }
 
     // Si los campos ya vienen con algo -la consulta llega por la direccion,
