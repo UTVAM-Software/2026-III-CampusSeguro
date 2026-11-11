@@ -21,6 +21,7 @@ from apps.campus.models import Campus, Correccion, PuntoApoyo
 from apps.comunicacion.models import Aviso, Notificacion
 from apps.reportes.models import Reporte
 from apps.usuarios.permisos import PermisoRequeridoMixin
+from apps.viajes.alertas import revisar_vencidos
 from apps.viajes.models import Viaje, ViajeAcompanante
 from config.fechas import hace
 
@@ -43,6 +44,11 @@ class InicioView(PermisoRequeridoMixin, LoginRequiredMixin, TemplateView):
     template_name = "index.html"
 
     def get_context_data(self, **kwargs):
+        # Antes de dibujar nada: si a un viaje se le pasó la hora, quien lo
+        # acompaña tiene que verlo en esta pantalla y no en la siguiente.
+        # Por qué se revisa al abrir y no en segundo plano, en `alertas.py`.
+        revisar_vencidos()
+
         contexto = super().get_context_data(**kwargs)
         usuario = self.request.user
         campus = usuario.campus

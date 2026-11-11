@@ -78,6 +78,24 @@ class PuntoApoyoForm(forms.ModelForm):
             [('', 'Elige un tipo')] + list(PuntoApoyo.TIPOS)
         )
 
+        # Igual que en el formulario de reportar: las coordenadas se
+        # comprueban juntas y con un mensaje que nombra lo que falta. Una por
+        # una sacaban dos "Este campo es obligatorio" sobre campos
+        # escondidos, que no le dicen nada a quien está delante.
+        self.fields['latitud'].required = False
+        self.fields['longitud'].required = False
+
+    def clean(self):
+        datos = super().clean()
+
+        if not datos.get('latitud') or not datos.get('longitud'):
+            self.add_error('latitud', (
+                'Falta decir dónde está. Señálalo en el mapa, usa tu '
+                'ubicación actual o busca la dirección.'
+            ))
+
+        return datos
+
 
 class CorreccionForm(forms.ModelForm):
     """

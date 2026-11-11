@@ -11,6 +11,7 @@ from django.views.generic import (
     ListView, DetailView, CreateView, UpdateView, DeleteView,
 )
 
+from .alertas import revisar_vencidos
 from .models import DestinoGuardado, UbicacionViaje, Viaje, ViajeAcompanante
 from .forms import AcompananteForm, DestinoGuardadoForm, ViajeForm
 from apps.usuarios.permisos import PermisoRequeridoMixin
@@ -75,6 +76,10 @@ class ViajeListView(PermisoRequeridoMixin, SoloMisViajesMixin, ListView):
     model = Viaje
 
     def get_context_data(self, **kwargs):
+        # Igual que en la pantalla de inicio: si a un viaje se le paso la
+        # hora mientras nadie miraba, que se vea aqui y no en la proxima.
+        revisar_vencidos()
+
         ctx = super().get_context_data(**kwargs)
         usuario = self.request.user
 
