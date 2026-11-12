@@ -45,10 +45,13 @@ trap 'alto "el paso anterior no termino bien. No se levanto el servicio."' ERR
 # ---------------------------------------------------------------- requisitos
 command -v git >/dev/null 2>&1 || alto 'hace falta git.'
 
+# Se prueba cada candidato callando su salida: en Windows, `python3` es un
+# acceso directo a la tienda de Microsoft que imprime un parrafo antes de
+# fallar, y ese parrafo en mitad de una instalacion parece un error.
 PY=''
 for candidato in python3 python; do
     if command -v "$candidato" >/dev/null 2>&1; then
-        if "$candidato" -c 'import sys; sys.exit(0 if sys.version_info >= (3,10) else 1)'; then
+        if "$candidato" -c 'import sys; sys.exit(0 if sys.version_info >= (3,10) else 1)' 2>/dev/null; then
             PY="$candidato"
             break
         fi
