@@ -233,12 +233,23 @@ STATIC_ROOT = BASE_DIR / 'estaticos'
 # Quien los sirve. WhiteNoise los entrega desde el propio proceso, sin
 # montar un Nginx delante: para este tamano es suficiente y deja la
 # instalacion en un solo paso.
+#
+# COMPRIME, PERO SIN MANIFIESTO
+#     La version con manifiesto le pone un hash al nombre de cada archivo
+#     para que el navegador no sirva una copia vieja. Aqui sobra: las
+#     plantillas ya piden `?v={{ VERSION_CSS }}`, que cambia cuando cambia
+#     el archivo, y eso hace el mismo trabajo.
+#
+#     Y cuesta caro: el manifiesto solo existe despues de `collectstatic`,
+#     asi que sin el CUALQUIER pantalla con `{% static %}` revienta con un
+#     500. Quien clone el proyecto y arranque sin recolectar -o corra las
+#     pruebas- se encontraria la aplicacion entera caida.
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
     },
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage',
     },
 }
 

@@ -130,12 +130,17 @@ fi
 "$VENV" manage.py crear_superusuario --correo "$ADMIN" --clave "$CLAVE" >/dev/null
 ok "cuenta de administracion: $ADMIN"
 
-"$VENV" manage.py check --deploy --fail-level ERROR >/dev/null
-ok 'revision de despliegue superada'
+# Las advertencias que quedan son todas de HTTPS, y son ciertas: este
+# servidor todavia no tiene certificado. Se van solas al poner HTTPS=True.
+"$VENV" manage.py check --deploy --fail-level ERROR >/dev/null 2>&1
+ok 'revision de despliegue superada (quedan avisos de HTTPS, ver abajo)'
 
 # --------------------------------------------------------- 5. servicio web
 paso '5/5  Servicio web'
 printf '    escuchando en http://%s:%s/\n' "${HOSTS%%,*}" "$PUERTO"
+printf '\n    Falta el certificado: mientras se sirva por http, deja\n'
+printf '    HTTPS=False en .env. Con el certificado puesto, cambialo a True\n'
+printf '    y las cookies pasan a viajar solo cifradas.\n'
 if [ "${GENERADA:-0}" = 1 ]; then
     printf '\n    Entra con  %s\n    contrasena %s\n' "$ADMIN" "$CLAVE"
     printf '    (apuntala: no se vuelve a mostrar)\n'

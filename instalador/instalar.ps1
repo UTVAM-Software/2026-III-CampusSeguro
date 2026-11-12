@@ -123,7 +123,9 @@ if (-not $Clave) {
 if ($LASTEXITCODE -ne 0) { Alto 'no se pudo crear la cuenta de administracion.' }
 Ok "cuenta de administracion: $Admin"
 
-& $venv manage.py check --deploy --fail-level ERROR | Out-Null
+# Las advertencias que quedan son de HTTPS, y son ciertas: este servidor
+# todavia no tiene certificado. Se van solas al poner HTTPS=True.
+& $venv manage.py check --deploy --fail-level ERROR 2>&1 | Out-Null
 if ($LASTEXITCODE -ne 0) { Alto 'la revision de despliegue encontro errores.' }
 Ok 'revision de despliegue superada'
 
@@ -131,6 +133,9 @@ Ok 'revision de despliegue superada'
 Paso '5/5  Servicio web'
 $primero = ($Hosts -split ',')[0]
 Write-Host "    escuchando en http://${primero}:$Puerto/"
+Write-Host "`n    Falta el certificado: mientras se sirva por http, deja"
+Write-Host "    HTTPS=False en .env. Con el certificado puesto, cambialo a"
+Write-Host "    True y las cookies pasan a viajar solo cifradas."
 if ($generada) {
     Write-Host "`n    Entra con  $Admin"
     Write-Host "    contrasena $Clave"
