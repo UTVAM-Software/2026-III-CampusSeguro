@@ -29,7 +29,21 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-solo-desarrollo-cambi
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+# Con que nombres se puede llamar a este servidor. En desarrollo basta con
+# localhost; en un servidor de verdad hay que anadir su nombre o su IP, o
+# Django responde 400 a todas las peticiones.
+ALLOWED_HOSTS = [
+    h.strip() for h in
+    os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+    if h.strip()
+]
+
+# Los nombres con los que se confia en un formulario. Django 4+ lo exige
+# cuando el sitio no se sirve desde localhost.
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',')
+    if o.strip()
+]
 
 # Application definition
 
@@ -52,6 +66,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Sirve los archivos estaticos cuando DEBUG esta apagado. Va justo
+    # despues de Security y antes de todo lo demas, como pide WhiteNoise.
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     # El idioma de cada petición (va después de sesiones y antes de Common,
     # como pide Django). Ver LANGUAGES más abajo.
@@ -126,10 +143,16 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
 
-# Solo por HTTPS, y solo fuera de desarrollo: en local se trabaja por http y
-# con esto encendido la sesion no se guardaria nunca.
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+# Solo por HTTPS. Depende de si HAY TLS, no de si es desarrollo: un servidor
+# recien instalado que todavia sirve por http apagaria el inicio de sesion
+# sin decir por que -el navegador acepta la cookie y no la devuelve nunca-,
+# y desde fuera parece que la contrasena esta mal.
+#
+# Se enciende con HTTPS=True en cuanto el servidor tenga certificado.
+HTTPS = os.environ.get('HTTPS', 'False') == 'True'
+
+SESSION_COOKIE_SECURE = HTTPS
+CSRF_COOKIE_SECURE = HTTPS
 
 
 # Con que se cifran las contrasenas. Argon2id va primero: gano el concurso de
@@ -202,6 +225,23 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 
+# Donde `collectstatic` junta todo para servirlo. Hace falta en un servidor:
+# con DEBUG apagado Django deja de servir archivos estaticos, y sin esto la
+# aplicacion carga sin una sola hoja de estilos.
+STATIC_ROOT = BASE_DIR / 'estaticos'
+
+# Quien los sirve. WhiteNoise los entrega desde el propio proceso, sin
+# montar un Nginx delante: para este tamano es suficiente y deja la
+# instalacion en un solo paso.
+STORAGES = {
+    'default': {
+        'BACKEND': 'django.core.files.storage.FileSystemStorage',
+    },
+    'staticfiles': {
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+    },
+}
+
 # Archivos que sube la gente (por ahora, la foto de un reporte). Van aparte de
 # los estáticos del proyecto: estos no se escriben a mano, llegan de fuera.
 # media/ ya está en .gitignore, así que no acaban en el repositorio.
@@ -263,10 +303,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 #     una comprobacion mas abajo que lo dice al arrancar. Un fallo silencioso
 #     aqui significa gente que pide el enlace y espera un mensaje que no sale
 #     de la maquina.
-if DEBUG:
-    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-else:
-    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+#     Un servidor recien instalado todavia no tiene SMTP, asi que se puede
+#     decir con que enviar: `EMAIL_BACKEND` en el entorno manda sobre todo
+#     esto. Ponerlo es declarar a sabiendas que no se envia correo de
+#     verdad, que es distinto de olvidarlo.
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend' if DEBUG
+    else 'django.core.mail.backends.smtp.EmailBackend',
+)
 
 EMAIL_HOST = os.environ.get('EMAIL_HOST', '')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
@@ -283,7 +328,10 @@ DEFAULT_FROM_EMAIL = os.environ.get(
 # el mensaje despues. Django lo invalida tambien en cuanto se usa.
 PASSWORD_RESET_TIMEOUT = 30 * 60
 
-if not DEBUG and not EMAIL_HOST:
+# La comprobacion solo aplica cuando se pidio enviar por SMTP de verdad: si
+# no hay servidor configurado, ese backend acepta el mensaje y no sale nada
+# de la maquina. Quien elige otro backend ya sabe lo que eligio.
+if EMAIL_BACKEND.endswith('smtp.EmailBackend') and not EMAIL_HOST:
     raise ImproperlyConfigured(
         'Falta EMAIL_HOST. Sin servidor de correo nadie puede recuperar su '
         'contrasena, y la pantalla prometeria un mensaje que no se envia.'

@@ -2,3 +2,14 @@ Django==5.2.18
 python-dotenv==1.2.4
 Pillow==12.3.0
 argon2-cffi==25.1.0
+
+# Para servir en un servidor. En desarrollo no hacen falta, pero instalarlos
+# siempre evita que la maquina donde se prueba y la que publica tengan
+# versiones distintas de nada.
+#
+#   whitenoise  entrega los archivos estaticos desde el propio proceso, sin
+#               montar un Nginx delante
+#   waitress    el servidor WSGI. `runserver` es de desarrollo y Django
+#               mismo avisa de que no se use para publicar
+whitenoise==6.9.0
+waitress==3.0.2
