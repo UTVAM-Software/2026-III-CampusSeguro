@@ -5,7 +5,7 @@
 # Se descarga suelto y se ejecuta desde cualquier carpeta: el primer paso es
 # traer el codigo, asi que no hace falta tener el proyecto antes.
 #
-#     curl -O https://raw.githubusercontent.com/UTVAM-Software/2026-III-CampusSeguro/main/instalador/instalar.sh
+#     curl -O https://raw.githubusercontent.com/UTVAM-Software/2026-III-CampusSeguro/main/instalar.sh
 #     bash instalar.sh
 #
 # Hace, y solo hace, los cinco pasos del procedimiento:
