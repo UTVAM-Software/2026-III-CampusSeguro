@@ -29,24 +29,91 @@ fácil leer la pantalla equivocada y entender otra cosa.
 
 ---
 
-## Arrancarlo
+## Instalarlo en un servidor
+
+Un solo archivo. **No hace falta descargar el proyecto antes**: traerlo es
+uno de los pasos del instalador.
+
+**Linux o macOS**
+
+```bash
+curl -O https://raw.githubusercontent.com/UTVAM-Software/2026-III-CampusSeguro/main/instalar.sh
+bash instalar.sh
+```
+
+**Windows**, en PowerShell:
+
+```powershell
+curl.exe -O https://raw.githubusercontent.com/UTVAM-Software/2026-III-CampusSeguro/main/instalar.ps1
+powershell -ExecutionPolicy Bypass -File instalar.ps1
+```
+
+Lo único que hace falta tener ya instalado es **git** y **Python 3.10 o
+superior**. El instalador hace, en este orden, los cinco pasos:
+
+| | |
+|---|---|
+| 1 | descarga el código |
+| 2 | crea el ambiente virtual e instala las dependencias |
+| 3 | genera la clave secreta y escribe el `.env` |
+| 4 | migra la base, reúne los estáticos, carga los campus y crea la cuenta de administración |
+| 5 | levanta el servicio web |
+
+El ambiente virtual se crea **después** de descargar el código porque vive
+dentro del proyecto: sin carpeta no hay dónde crearlo. El orden del
+procedimiento se respeta; el físico no puede.
+
+Al terminar imprime con qué cuenta entrar y su contraseña, **que no se
+vuelve a mostrar**.
+
+Si algún paso falla se detiene con `FALLO:` y no levanta nada. Se puede
+volver a correr sobre una instalación que ya existía: actualiza el código y
+no pisa ni la base de datos ni el `.env`.
+
+Se puede cambiar sin editar el archivo:
+
+```bash
+PUERTO=8080 HOSTS="campus.utvam.edu.mx" ADMIN="tu@correo.mx" bash instalar.sh
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File instalar.ps1 -Puerto 8080 -Hosts "campus.utvam.edu.mx"
+```
+
+### Cuando el servidor tenga certificado
+
+Pon `HTTPS=True` en el `.env` y reinicia. Hasta entonces déjalo en `False`:
+las cookies marcadas como seguras no viajan por `http`, y encenderlo antes
+de tiempo **impide iniciar sesión** sin decir por qué.
+
+Y para que la recuperación de contraseñas envíe correo de verdad, pon
+`EMAIL_HOST` y borra la línea de `EMAIL_BACKEND`.
+
+---
+
+## Arrancarlo para trabajar en él
+
+Esto es para desarrollo. Para un servidor, el instalador de arriba.
 
 Hace falta **Python 3.10 o superior**. No hace falta Node, ni MySQL, ni
 ninguna clave de ningún servicio.
 
 ```bash
+git clone https://github.com/UTVAM-Software/2026-III-CampusSeguro.git
+cd 2026-III-CampusSeguro
 python -m venv .venv
-.venv/Scripts/python.exe -m pip install -r requirements.txt
+.venv/bin/python -m pip install -r requirements.txt
 cp .env.example .env
-.venv/Scripts/python.exe manage.py migrate
-.venv/Scripts/python.exe manage.py runserver 8001
+.venv/bin/python manage.py migrate
+.venv/bin/python manage.py runserver 8001
 ```
 
-En Linux o macOS, `.venv/bin/python` en vez de `.venv/Scripts/python.exe`.
+En **Windows** cambia `.venv/bin/python` por `.venv\Scripts\python.exe`, y
+si usas CMD en vez de PowerShell, `copy .env.example .env` en vez de `cp`.
 
 **El `cp .env.example .env` no es opcional.** Sin `.env`, `DEBUG` queda
-apagado, y con `DEBUG` apagado el proyecto exige un servidor de correo y no
-arranca: sin correo nadie puede recuperar su contraseña, y esa pantalla
+apagado, y con `DEBUG` apagado el proyecto pide un servidor de correo para
+arrancar: sin correo nadie puede recuperar su contraseña, y esa pantalla
 prometería un mensaje que no se envía. `.env` no se sube al repositorio
 porque ahí acaban la clave secreta y, el día que lo haya, la contraseña del
 correo.
