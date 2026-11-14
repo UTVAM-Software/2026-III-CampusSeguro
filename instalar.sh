@@ -135,7 +135,9 @@ ok "cuenta de administracion: $ADMIN"
 
 # Las advertencias que quedan son todas de HTTPS, y son ciertas: este
 # servidor todavia no tiene certificado. Se van solas al poner HTTPS=True.
-"$VENV" manage.py check --deploy --fail-level ERROR >/dev/null 2>&1
+if ! "$VENV" manage.py check --deploy --fail-level ERROR >/dev/null 2>&1; then
+    alto 'la revision de despliegue encontro errores.'
+fi
 ok 'revision de despliegue superada (quedan avisos de HTTPS, ver abajo)'
 
 # --------------------------------------------------------- 5. servicio web
