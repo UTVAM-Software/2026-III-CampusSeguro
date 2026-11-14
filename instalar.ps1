@@ -125,9 +125,19 @@ Ok "cuenta de administracion: $Admin"
 
 # Las advertencias que quedan son de HTTPS, y son ciertas: este servidor
 # todavia no tiene certificado. Se van solas al poner HTTPS=True.
+#
+# Salen por el canal de error, y PowerShell 5.1 convierte cada linea de error
+# de un programa externo en un ErrorRecord: con la preferencia en 'Stop' eso
+# aborta el script aunque el programa haya salido con codigo 0. Asi que aqui
+# se mira el codigo de salida, que es lo unico que dice si de verdad fallo.
+$preferencia = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
 & $venv manage.py check --deploy --fail-level ERROR 2>&1 | Out-Null
-if ($LASTEXITCODE -ne 0) { Alto 'la revision de despliegue encontro errores.' }
-Ok 'revision de despliegue superada'
+$salida = $LASTEXITCODE
+$ErrorActionPreference = $preferencia
+
+if ($salida -ne 0) { Alto 'la revision de despliegue encontro errores.' }
+Ok 'revision de despliegue superada (quedan avisos de HTTPS, ver abajo)'
 
 # --------------------------------------------------------- 5. servicio web
 Paso '5/5  Servicio web'
